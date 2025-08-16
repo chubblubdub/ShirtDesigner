@@ -1,524 +1,333 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>t-shirt mockup (single file)</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Shirt Designer Mockup</title>
 <style>
-  :root {
-    --bg: #0f1115;
-    --panel: #171923;
-    --muted: #a0a6b0;
-    --text: #e7eaf0;
-    --accent: #7aa2ff;
-    --ring: #2b3150;
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0; background: var(--bg); color: var(--text);
-    font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
-    text-transform: lowercase;
-  }
-  .wrap {
-    display: grid; gap: 12px;
-    grid-template-columns: 1fr 320px;
-    min-height: 100svh; padding: 14px;
-  }
-  @media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } }
-
-  .stage-wrap {
-    background: #0b0d12; border: 1px solid #111520;
-    border-radius: 16px; padding: 10px; display: grid;
-    grid-template-rows: auto 1fr auto; gap: 8px;
-  }
-  .stage-toolbar, .panel .row {
-    display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
-  }
-  .badge {
-    font-size: 12px; padding: 4px 8px; border-radius: 999px;
-    background: #111520; color: var(--muted); border: 1px solid #161a2a;
-  }
-
-  #stage {
-    position: relative; width: 100%; height: clamp(360px, 70vh, 78vh);
-    background: #0b0d12; border: 1px dashed #22283a; border-radius: 12px;
-    overflow: hidden; display: grid; place-items: center;
-    outline: 0;
-  }
-  #shirtImg {
-    max-width: 100%; max-height: 100%;
-    object-fit: contain; display: block; pointer-events: none;
-    filter: none;
-  }
-  /* overlay container that moves/resizes */
-  #overlayBox {
-    position: absolute; left: 50%; top: 50%;
-    translate: -50% -50%;
-    width: 40%; /* percent of stage width */
-    aspect-ratio: 1 / 1;
-    touch-action: none; cursor: grab;
-    display: grid; place-items: center;
-  }
-  #overlayBox.dragging { cursor: grabbing; }
-  #overlayInner {
-    width: 100%; height: 100%;
-    display: grid; place-items: center;
-  }
-  #overlayInner svg {
-    width: 100%; height: 100%;
-    display: block;
-  }
-  /* simple resize handle in bottom-right */
-  .handle {
-    position: absolute; right: -8px; bottom: -8px;
-    width: 18px; height: 18px; border-radius: 4px;
-    background: var(--accent); box-shadow: 0 2px 10px rgba(0,0,0,.35);
-    cursor: nwse-resize;
-    border: 2px solid #0b0d12;
-  }
-
-  .panel {
-    background: var(--panel); border: 1px solid #111520;
-    border-radius: 16px; padding: 14px; display: grid; gap: 12px; align-content: start;
-  }
-  .panel h2 { margin: 0 0 6px; font-size: 16px; color: var(--muted); font-weight: 600; }
-  label { font-size: 13px; color: var(--muted); }
-  input[type="file"], select, input[type="url"], input[type="text"] {
-    width: 100%; padding: 10px 12px; border-radius: 10px;
-    border: 1px solid #1b2033; background: #0e111a; color: var(--text);
-    outline: none;
-  }
-  input[type="range"] { width: 100%; }
-  input[type="color"] {
-    width: 44px; height: 34px; padding: 0; border: 1px solid #1b2033;
-    background: #0e111a; border-radius: 8px;
-  }
-  button {
-    all: unset; display: inline-flex; align-items: center; justify-content: center;
-    padding: 10px 14px; border-radius: 12px; background: #111520;
-    color: var(--text); border: 1px solid #161a2a; cursor: pointer;
-  }
-  button.primary { background: var(--accent); color: #0c101a; border-color: #5d83ff; }
-  button:disabled { opacity: .5; cursor: not-allowed; }
-  .spacer { height: 6px; }
-  .muted { color: var(--muted); font-size: 12px; }
-  .hr { height: 1px; background: #14192a; margin: 6px 0; }
-  .hint { font-size: 12px; color: var(--muted); }
-  .pill { padding: 4px 8px; background: #0f1322; border: 1px solid #1c2340; border-radius: 999px; font-size: 12px; color: var(--muted); }
-  .row.right { justify-content: flex-end; }
+body {
+  margin: 0;
+  background: #0f1115;
+  color: #e7eaf0;
+  font-family: system-ui, sans-serif;
+  text-transform: lowercase;
+  display: flex;
+  justify-content: center;
+  padding: 10px;
+}
+.wrap {
+  display: flex;
+  gap: 16px;
+  max-width: 1200px;
+  width: 100%;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.stage-wrap {
+  background: #0b0d12;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid #111520;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+#stage {
+  position: relative;
+  display: inline-block;
+  background: #0b0d12;
+  border-radius: 8px;
+  border: 1px dashed #22283a;
+}
+#shirtImg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+#overlayBox {
+  position: absolute;
+  border: 1px dashed #7aa2ff;
+  cursor: grab;
+}
+#overlayBox.dragging {
+  cursor: grabbing;
+}
+#overlayInner svg {
+  width: 100%;
+  height: 100%;
+}
+.handle {
+  width: 16px;
+  height: 16px;
+  background: #7aa2ff;
+  position: absolute;
+  bottom: -8px;
+  right: -8px;
+  cursor: nwse-resize;
+  border-radius: 4px;
+}
+.panel {
+  background: #171923;
+  border-radius: 12px;
+  border: 1px solid #111520;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 300px;
+}
+label {
+  font-size: 13px;
+  color: #a0a6b0;
+}
+input, select, button {
+  font-size: 14px;
+}
+input[type=file], select, input[type=url], input[type=color] {
+  width: 100%;
+  padding: 6px;
+  border-radius: 8px;
+  border: 1px solid #1b2033;
+  background: #0e111a;
+  color: #e7eaf0;
+}
+input[type=range] {
+  width: 100%;
+}
+button {
+  padding: 8px 12px;
+  background: #111520;
+  color: #e7eaf0;
+  border-radius: 8px;
+  border: 1px solid #161a2a;
+  cursor: pointer;
+}
+button.primary {
+  background: #7aa2ff;
+  color: #0c101a;
+  border-color: #5d83ff;
+}
+.row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.pill {
+  background: #0f1322;
+  padding: 2px 6px;
+  border-radius: 999px;
+  font-size: 12px;
+}
 </style>
 </head>
 <body>
-  <div class="wrap">
-    <!-- stage -->
-    <section class="stage-wrap">
-      <div class="stage-toolbar">
-        <span class="badge">t-shirt preview</span>
-        <span class="muted">drag the design. use slider to resize. pick a color.</span>
+<div class="wrap">
+  <div class="stage-wrap">
+    <div id="stage">
+      <img id="shirtImg" alt="upload shirt" />
+      <div id="overlayBox" hidden>
+        <div id="overlayInner"></div>
+        <div class="handle"></div>
       </div>
-
-      <div id="stage" tabindex="0" aria-label="mockup stage">
-        <img id="shirtImg" alt="upload a t-shirt photo" />
-        <div id="overlayBox" aria-label="design overlay" hidden>
-          <div id="overlayInner"></div>
-          <div class="handle" title="resize"></div>
-        </div>
-      </div>
-
-      <div class="stage-toolbar row right">
-        <button id="centerBtn" title="center overlay">center</button>
-        <button id="fitBtn" title="fit overlay to common chest area">fit to chest</button>
-        <button class="primary" id="exportBtn" title="download composite png" disabled>export png</button>
-      </div>
-    </section>
-
-    <!-- controls -->
-    <aside class="panel">
-      <h2>upload shirt</h2>
-      <div class="row">
-        <input type="file" id="shirtInput" accept="image/*" />
-      </div>
-      <div class="hint">tip: a straight-on photo with the shirt centered works best.</div>
-
-      <div class="hr"></div>
-
-      <h2>choose design (svg)</h2>
-      <div class="row">
-        <select id="svgSelect" title="svg list">
-          <!-- populated by JS -->
-        </select>
-      </div>
-      <div class="row">
-        <input type="url" id="customUrl" placeholder="or paste custom svg url (raw)" />
-        <button id="loadCustomBtn">load</button>
-      </div>
-      <div class="hint">use raw github links (e.g., https://raw.githubusercontent.com/user/repo/branch/path.svg)</div>
-
-      <div class="hr"></div>
-
-      <h2>style</h2>
-      <div class="row" style="gap:12px; align-items: center;">
-        <label for="color">color</label>
-        <input type="color" id="color" value="#000000" />
-        <label for="opacity">opacity</label>
-        <input type="range" id="opacity" min="0" max="100" value="100" />
-        <span class="pill" id="opacityPct">100%</span>
-      </div>
-      <div class="row" style="gap:12px; align-items: center;">
-        <label for="scale">size</label>
-        <input type="range" id="scale" min="10" max="120" value="40" />
-        <span class="pill" id="scalePct">40%</span>
-      </div>
-      <div class="row" style="gap:12px; align-items: center;">
-        <label for="rotation">rotation</label>
-        <input type="range" id="rotation" min="-45" max="45" value="0" />
-        <span class="pill" id="rotDeg">0°</span>
-      </div>
-
-      <div class="hr"></div>
-      <div class="hint">replace the svg list in the code to point at your repo.</div>
-    </aside>
+    </div>
+    <div class="row">
+      <button id="centerBtn">center</button>
+      <button id="fitBtn">fit chest</button>
+      <button class="primary" id="exportBtn" disabled>export</button>
+    </div>
   </div>
+  <div class="panel">
+    <label>upload shirt</label>
+    <input type="file" id="shirtInput" accept="image/*">
+    <label>design</label>
+    <select id="svgSelect"></select>
+    <input type="url" id="customUrl" placeholder="or paste svg url">
+    <button id="loadCustomBtn">load custom</button>
+    <label>color</label>
+    <input type="color" id="color" value="#000000">
+    <label>opacity</label>
+    <input type="range" id="opacity" min="0" max="100" value="100">
+    <span class="pill" id="opacityPct">100%</span>
+    <label>size</label>
+    <input type="range" id="scale" min="10" max="120" value="40">
+    <span class="pill" id="scalePct">40%</span>
+    <label>rotation</label>
+    <input type="range" id="rotation" min="-45" max="45" value="0">
+    <span class="pill" id="rotDeg">0°</span>
+  </div>
+</div>
 
 <script>
-/* =========================
-   1) configure your svg list
-   replace the urls with your raw github svg links
-   ========================= */
 const SVG_LIST = [
   { label: "select a design…", url: "" },
   { label: "smiley", url: "https://raw.githubusercontent.com/chubblubdub/ShirtDesigner/main/smiley.svg" },
   { label: "heart", url: "https://raw.githubusercontent.com/chubblubdub/ShirtDesigner/main/heart.svg" },
   { label: "squiggle", url: "https://raw.githubusercontent.com/chubblubdub/ShirtDesigner/main/squiggle.svg" },
-  // example: { label: "your-repo • comet", url: "https://raw.githubusercontent.com/USER/REPO/BRANCH/path/to/comet.svg" },
 ];
-
-/* =========================
-   dom refs
-   ========================= */
 const shirtInput = document.getElementById('shirtInput');
-const shirtImg   = document.getElementById('shirtImg');
-const stage      = document.getElementById('stage');
+const shirtImg = document.getElementById('shirtImg');
+const stage = document.getElementById('stage');
 const overlayBox = document.getElementById('overlayBox');
 const overlayInner = document.getElementById('overlayInner');
-const handle     = overlayBox.querySelector('.handle');
-
-const svgSelect  = document.getElementById('svgSelect');
-const customUrl  = document.getElementById('customUrl');
+const handle = overlayBox.querySelector('.handle');
+const svgSelect = document.getElementById('svgSelect');
+const customUrl = document.getElementById('customUrl');
 const loadCustomBtn = document.getElementById('loadCustomBtn');
-
 const colorInput = document.getElementById('color');
 const opacityInput = document.getElementById('opacity');
 const opacityPct = document.getElementById('opacityPct');
 const scaleInput = document.getElementById('scale');
-const scalePct   = document.getElementById('scalePct');
+const scalePct = document.getElementById('scalePct');
 const rotationInput = document.getElementById('rotation');
-const rotDeg     = document.getElementById('rotDeg');
+const rotDeg = document.getElementById('rotDeg');
+const exportBtn = document.getElementById('exportBtn');
+const centerBtn = document.getElementById('centerBtn');
+const fitBtn = document.getElementById('fitBtn');
+let sizePct = 40, rotationDeg = 0, pos = { xPct: 50, yPct: 50 }, isDragging=false, dragStart={}, boxStart={};
 
-const exportBtn  = document.getElementById('exportBtn');
-const centerBtn  = document.getElementById('centerBtn');
-const fitBtn     = document.getElementById('fitBtn');
-
-/* =========================
-   state
-   ========================= */
-let isDragging = false;
-let start = { x: 0, y: 0 };
-let pos = { xPct: 50, yPct: 50 }; // overlay center in stage %
-let sizePct = 40;                 // overlay width in stage %
-let rotationDeg = 0;
-let currentSVGEl = null;
-
-/* =========================
-   init
-   ========================= */
-function initSelect() {
-  svgSelect.innerHTML = "";
-  SVG_LIST.forEach(({label, url}, i) => {
-    const opt = document.createElement('option');
-    opt.value = url; opt.textContent = label;
-    if (i===0) opt.disabled = true; // placeholder
-    svgSelect.appendChild(opt);
-  });
-}
-initSelect();
-
-/* =========================
-   helpers
-   ========================= */
-function clamp(n, min, max) { return Math.max(min, Math.min(max, n)); }
-
-function setOverlayTransform() {
-  overlayBox.style.left = pos.xPct + "%";
-  overlayBox.style.top  = pos.yPct + "%";
-  overlayBox.style.width = sizePct + "%";
-  overlayBox.style.transform = `translate(-50%, -50%) rotate(${rotationDeg}deg)`;
-  scalePct.textContent = sizePct + "%";
-  rotDeg.textContent = rotationDeg + "°";
-}
-
-function stageRect() { return stage.getBoundingClientRect(); }
-
-function applyColorToSVG(root, color) {
-  // set fill/stroke to chosen color unless explicitly "none"
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT, null);
-  while (walker.nextNode()) {
-    const el = walker.currentNode;
-    const fill = el.getAttribute && el.getAttribute('fill');
-    const stroke = el.getAttribute && el.getAttribute('stroke');
-
-    if (fill && fill.toLowerCase() !== 'none') el.setAttribute('fill', color);
-    if (stroke && stroke.toLowerCase() !== 'none') el.setAttribute('stroke', color);
-
-    // if neither present, default fill color for typical paths
-    if (!fill && !stroke) el.setAttribute('fill', color);
-  }
-}
-
-function clearOverlay() {
-  overlayInner.replaceChildren();
-  currentSVGEl = null;
-}
-
-async function loadSVG(url) {
-  if (!url) return;
-  try {
-    const res = await fetch(url, { mode: 'cors' });
-    if (!res.ok) throw new Error("failed to fetch svg");
-    const text = await res.text();
-
-    // parse and inject
-    const tmp = document.createElement('div');
-    tmp.innerHTML = text.trim();
-    const svg = tmp.querySelector('svg');
-    if (!svg) throw new Error("no <svg> root found");
-
-    // remove hard-coded sizes so it scales nicely
-    svg.removeAttribute('width');
-    svg.removeAttribute('height');
-    svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
-
-    clearOverlay();
-    overlayInner.appendChild(svg);
-    currentSVGEl = svg;
-
-    // initial color & opacity
-    applyColorToSVG(currentSVGEl, colorInput.value);
-    overlayBox.style.opacity = (opacityInput.value / 100).toString();
-
-    overlayBox.hidden = false;
-    setOverlayTransform();
-    exportBtn.disabled = !shirtImg.src;
-  } catch (e) {
-    alert("couldn’t load svg. make sure it’s a raw link.\n\n" + e.message);
-  }
-}
-
-function centerOverlay() {
-  pos.xPct = 50; pos.yPct = 50;
-  setOverlayTransform();
-}
-
-function fitChest() {
-  // a reasonable default chest placement: centered horizontally,
-  // ~38% from top, width ~45% of stage (tweak as desired)
-  pos.xPct = 50;
-  pos.yPct = 38;
-  sizePct = 45;
-  setOverlayTransform();
-}
-
-function pctPositionFromPixels(clientX, clientY) {
-  const r = stageRect();
-  const x = clamp((clientX - r.left) / r.width * 100, 0, 100);
-  const y = clamp((clientY - r.top) / r.height * 100, 0, 100);
-  return {x, y};
-}
-
-/* =========================
-   events: shirt upload
-   ========================= */
-shirtInput.addEventListener('change', () => {
-  const file = shirtInput.files?.[0];
-  if (!file) return;
-  const url = URL.createObjectURL(file);
-  shirtImg.src = url;
-  shirtImg.onload = () => URL.revokeObjectURL(url);
-  exportBtn.disabled = !currentSVGEl;
+SVG_LIST.forEach(({label,url},i)=>{
+  const opt=document.createElement('option');
+  opt.textContent=label; opt.value=url; if(i===0) opt.disabled=true;
+  svgSelect.appendChild(opt);
 });
-
-/* =========================
-   events: overlay choose/load
-   ========================= */
-svgSelect.addEventListener('change', () => {
-  if (svgSelect.value) loadSVG(svgSelect.value);
-});
-loadCustomBtn.addEventListener('click', () => {
-  if (customUrl.value.trim()) {
-    svgSelect.selectedIndex = 0;
-    loadSVG(customUrl.value.trim());
+shirtInput.addEventListener('change', e=>{
+  const file = e.target.files[0];
+  if(file){
+    const url = URL.createObjectURL(file);
+    loadShirt(url);
   }
 });
-
-/* =========================
-   events: style controls
-   ========================= */
-colorInput.addEventListener('input', () => {
-  if (currentSVGEl) applyColorToSVG(currentSVGEl, colorInput.value);
-});
-opacityInput.addEventListener('input', () => {
-  overlayBox.style.opacity = (opacityInput.value / 100).toString();
-  opacityPct.textContent = opacityInput.value + "%";
-});
-scaleInput.addEventListener('input', () => {
-  sizePct = parseInt(scaleInput.value, 10);
-  setOverlayTransform();
-});
-rotationInput.addEventListener('input', () => {
-  rotationDeg = parseInt(rotationInput.value, 10);
-  setOverlayTransform();
-});
-
-/* =========================
-   drag move (pointer events)
-   ========================= */
-overlayBox.addEventListener('pointerdown', (e) => {
-  if (e.button !== 0) return;
-  isDragging = true;
-  overlayBox.classList.add('dragging');
-  overlayBox.setPointerCapture(e.pointerId);
-  start = { x: e.clientX, y: e.clientY };
+stage.addEventListener('dragover', e=>{e.preventDefault();});
+stage.addEventListener('drop', e=>{
   e.preventDefault();
+  if(e.dataTransfer.files.length){
+    const file=e.dataTransfer.files[0];
+    loadShirt(URL.createObjectURL(file));
+  }
 });
-overlayBox.addEventListener('pointermove', (e) => {
-  if (!isDragging) return;
-  const r = stageRect();
-  const dxPct = (e.clientX - start.x) / r.width * 100;
-  const dyPct = (e.clientY - start.y) / r.height * 100;
-  pos.xPct = clamp(pos.xPct + dxPct, 0, 100);
-  pos.yPct = clamp(pos.yPct + dyPct, 0, 100);
-  start = { x: e.clientX, y: e.clientY };
+document.addEventListener('paste', e=>{
+  const items = e.clipboardData.items;
+  for(let item of items){
+    if(item.type.indexOf("image")!==-1){
+      const blob = item.getAsFile();
+      loadShirt(URL.createObjectURL(blob));
+    }
+  }
+});
+function loadShirt(src){
+  shirtImg.src=src;
+  shirtImg.onload=()=>{
+    stage.style.width=shirtImg.width+"px";
+    stage.style.height=shirtImg.height+"px";
+    exportBtn.disabled=false;
+  };
+}
+svgSelect.addEventListener('change', ()=>loadSVG(svgSelect.value));
+loadCustomBtn.addEventListener('click', ()=>loadSVG(customUrl.value));
+async function loadSVG(url){
+  if(!url) return;
+  const resp=await fetch(url);
+  const text=await resp.text();
+  overlayInner.innerHTML=text;
+  currentSVGEl = overlayInner.querySelector('svg');
+  applyColor(currentSVGEl, colorInput.value);
+  overlayBox.hidden=false;
   setOverlayTransform();
-});
-overlayBox.addEventListener('pointerup', (e) => {
-  isDragging = false;
-  overlayBox.classList.remove('dragging');
-  overlayBox.releasePointerCapture(e.pointerId);
-});
-
-/* =========================
-   resize via handle (pointer)
-   ========================= */
-let resizing = false;
-handle.addEventListener('pointerdown', (e) => {
-  e.stopPropagation();
-  resizing = true;
-  handle.setPointerCapture(e.pointerId);
-  start = { x: e.clientX, y: e.clientY };
-});
-handle.addEventListener('pointermove', (e) => {
-  if (!resizing) return;
-  const r = stageRect();
-  const dxPct = (e.clientX - start.x) / r.width * 100;
-  sizePct = clamp(sizePct + dxPct, 5, 150);
-  scaleInput.value = Math.round(sizePct);
-  start = { x: e.clientX, y: e.clientY };
-  setOverlayTransform();
-});
-handle.addEventListener('pointerup', (e) => {
-  resizing = false;
-  handle.releasePointerCapture(e.pointerId);
-});
-
-/* =========================
-   quick buttons
-   ========================= */
-centerBtn.addEventListener('click', centerOverlay);
-fitBtn.addEventListener('click', fitChest);
-
-/* =========================
-   export (canvas composite)
-   ========================= */
-exportBtn.addEventListener('click', async () => {
-  if (!shirtImg.src || !currentSVGEl) return;
-
-  const r = stage.getBoundingClientRect();
-  const canvas = document.createElement('canvas');
-  // render at device pixel ratio for sharper output
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  canvas.width  = Math.round(r.width * dpr);
-  canvas.height = Math.round(r.height * dpr);
-
-  const ctx = canvas.getContext('2d');
-  ctx.scale(dpr, dpr);
-
-  // draw shirt image (fit contain)
-  // compute fitted size and offset to mimic CSS object-fit: contain
-  const natW = shirtImg.naturalWidth || r.width;
-  const natH = shirtImg.naturalHeight || r.height;
-  const scale = Math.min(r.width / natW, r.height / natH);
-  const drawW = natW * scale;
-  const drawH = natH * scale;
-  const offX = (r.width - drawW) / 2;
-  const offY = (r.height - drawH) / 2;
-  ctx.drawImage(shirtImg, offX, offY, drawW, drawH);
-
-  // draw overlay: serialize svg to data url, then draw with transforms
-  const svgClone = currentSVGEl.cloneNode(true);
-  // ensure its color/attributes are serialized
-  const svgText = new XMLSerializer().serializeToString(svgClone);
-  const svgBlob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
-  const svgUrl = URL.createObjectURL(svgBlob);
-
-  await new Promise((resolve) => {
-    const img = new Image();
-    img.onload = () => {
-      // overlay box frame in stage coordinates
-      const boxW = r.width * (sizePct / 100);
-      const boxH = boxW; // aspect kept square via CSS; svg scales inside
-      const cx = r.width * (pos.xPct / 100);
-      const cy = r.height * (pos.yPct / 100);
-
-      ctx.save();
-      ctx.globalAlpha = parseFloat(getComputedStyle(overlayBox).opacity) || 1;
-      ctx.translate(cx, cy);
-      ctx.rotate(rotationDeg * Math.PI / 180);
-      // draw so that image is centered within the box
-      ctx.drawImage(img, -boxW/2, -boxH/2, boxW, boxH);
-      ctx.restore();
-
-      URL.revokeObjectURL(svgUrl);
-      resolve();
-    };
-    // set crossOrigin to allow drawImage if server permits it
-    img.crossOrigin = "anonymous";
-    img.src = svgUrl;
+}
+function applyColor(root, color){
+  root.querySelectorAll("*").forEach(el=>{
+    if(el.getAttribute("fill")!=="none") el.setAttribute("fill", color);
+    if(el.getAttribute("stroke")!=="none") el.setAttribute("stroke", color);
   });
-
-  // download
-  const a = document.createElement('a');
-  a.download = 'mockup.png';
-  a.href = canvas.toDataURL('image/png');
-  a.click();
+}
+colorInput.addEventListener('input', ()=>{
+  if(overlayInner.firstChild) applyColor(overlayInner.firstChild, colorInput.value);
 });
-
-/* =========================
-   accessibility niceties
-   ========================= */
-stage.addEventListener('keydown', (e) => {
-  if (overlayBox.hidden) return;
-  const step = e.shiftKey ? 2 : 0.5;
-  let consumed = true;
-  if (e.key === 'ArrowLeft')  pos.xPct = clamp(pos.xPct - step, 0, 100);
-  else if (e.key === 'ArrowRight') pos.xPct = clamp(pos.xPct + step, 0, 100);
-  else if (e.key === 'ArrowUp')    pos.yPct = clamp(pos.yPct - step, 0, 100);
-  else if (e.key === 'ArrowDown')  pos.yPct = clamp(pos.yPct + step, 0, 100);
-  else consumed = false;
-  if (consumed) { setOverlayTransform(); e.preventDefault(); }
+opacityInput.addEventListener('input', ()=>{
+  opacityPct.textContent=opacityInput.value+"%";
+  overlayBox.style.opacity=opacityInput.value/100;
 });
-
-// prime default ui
-centerOverlay();
+scaleInput.addEventListener('input', ()=>{
+  sizePct=parseInt(scaleInput.value);
+  scalePct.textContent=sizePct+"%";
+  setOverlayTransform();
+});
+rotationInput.addEventListener('input', ()=>{
+  rotationDeg=parseInt(rotationInput.value);
+  rotDeg.textContent=rotationDeg+"°";
+  setOverlayTransform();
+});
+centerBtn.addEventListener('click', ()=>{
+  pos={xPct:50,yPct:50};
+  setOverlayTransform();
+});
+fitBtn.addEventListener('click', ()=>{
+  sizePct=50; pos={xPct:50,yPct:35};
+  setOverlayTransform();
+});
+overlayBox.addEventListener('mousedown', e=>{
+  if(e.target===handle){
+    isResizing=true;
+  } else {
+    isDragging=true;
+  }
+  dragStart={x:e.clientX, y:e.clientY};
+  boxStart={...pos, size:sizePct};
+  overlayBox.classList.add('dragging');
+});
+document.addEventListener('mousemove', e=>{
+  if(isDragging){
+    const rect=stage.getBoundingClientRect();
+    const dx=(e.clientX-dragStart.x)/rect.width*100;
+    const dy=(e.clientY-dragStart.y)/rect.height*100;
+    pos.xPct=boxStart.xPct+dx;
+    pos.yPct=boxStart.yPct+dy;
+    setOverlayTransform();
+  }
+  if(isResizing){
+    const rect=stage.getBoundingClientRect();
+    const dx=(e.clientX-dragStart.x)/rect.width*100;
+    sizePct=Math.max(5, boxStart.size+dx);
+    scalePct.textContent=Math.round(sizePct)+"%";
+    setOverlayTransform();
+  }
+});
+document.addEventListener('mouseup', ()=>{
+  isDragging=false;
+  isResizing=false;
+  overlayBox.classList.remove('dragging');
+});
+function setOverlayTransform(){
+  overlayBox.style.left=pos.xPct+"%";
+  overlayBox.style.top=pos.yPct+"%";
+  overlayBox.style.width=sizePct+"%";
+  overlayBox.style.transform=`translate(-50%,-50%) rotate(${rotationDeg}deg)`;
+}
+exportBtn.addEventListener('click', ()=>{
+  const canvas=document.createElement('canvas');
+  canvas.width=shirtImg.width;
+  canvas.height=shirtImg.height;
+  const ctx=canvas.getContext('2d');
+  ctx.drawImage(shirtImg,0,0);
+  const svgData=new XMLSerializer().serializeToString(overlayInner.firstChild);
+  const img=new Image();
+  const svgBlob=new Blob([svgData],{type:"image/svg+xml;charset=utf-8"});
+  const url=URL.createObjectURL(svgBlob);
+  img.onload=()=>{
+    ctx.globalAlpha=overlayBox.style.opacity || 1;
+    const ow=overlayBox.offsetWidth;
+    const oh=overlayBox.offsetHeight;
+    const ox=(pos.xPct/100)*shirtImg.width-ow/2;
+    const oy=(pos.yPct/100)*shirtImg.height-oh/2;
+    ctx.drawImage(img, ox, oy, ow, oh);
+    const link=document.createElement('a');
+    link.download="shirt_mockup.png";
+    link.href=canvas.toDataURL();
+    link.click();
+  };
+  img.src=url;
+});
 </script>
 </body>
 </html>

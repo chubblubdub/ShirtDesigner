@@ -45,14 +45,33 @@ body {
   max-height: 700px; /* added max size */
   height: auto;
 }
-#overlayBox { position: absolute; border: 1px dashed #7aa2ff; cursor: grab; }
-#overlayBox.dragging { cursor: grabbing; }
-/* Fix SVG sizing to preserve aspect ratio */
-#overlayInner svg { 
-  width: 100%; 
-  height: auto; 
-  display: block; 
+#overlayBox {
+  position: absolute !important;
+  border: 2px dashed black; /* fallback */
+  border-width: 1px !important;
+  cursor: grab !important;
+  z-index: 9999 !important;
+
+  /* Black-and-white dashed */
+  border-style: solid;
+  border-image: repeating-linear-gradient(
+    45deg, 
+    black 0 2px, 
+    white 2px 4px
+  ) 1 round !important;
 }
+#overlayBox.dragging {
+  cursor: grabbing !important;
+}
+
+
+/* Inner SVG sizing */
+#overlayInner svg { 
+  width: 100% !important; 
+  height: auto !important; 
+  display: block !important; 
+}
+
 .handle {
   width: 16px;
   height: 16px;
@@ -66,7 +85,7 @@ body {
 .panel {
   background: #d40000;
   border-radius: 12px;
-  border: 1px solid #a8a8a8;
+  border: 0px solid #000000;
   padding: 12px;
   display: flex;
   flex-direction: column;
@@ -81,20 +100,20 @@ input[type=file], select, input[type=url], input[type=color] {
   border-radius: 8px;
   border: 1px solid #1b2033;
   background: #000000;
-  color: #e7eaf0;
+  color: #ffffff;
 }
 input[type=range] { width: 100%; }
 button {
   padding: 8px 12px;
-  background: #111520;
-  color: #e7eaf0;
+  background: #000000;
+  color: #ffffff;
   border-radius: 8px;
-  border: 1px solid #161a2a;
+  border: 0px solid #161a2a;
   cursor: pointer;
 }
 button.primary {
-  background: #7aa2ff;
-  color: #0c101a;
+  background: #d40000;
+  color: #ffffff;
   border-color: #5d83ff;
 }
 .row { display: flex; gap: 8px; align-items: center; justify-content: center; } /* center only horizontally */
@@ -112,11 +131,14 @@ button.primary {
 .carousel-btn {
   width: 32px;
   height: 32px;
-  border: 1px solid #161a2a;
-  background: #111520;
-  color: #e7eaf0;
+  border: 0px solid #161a2a;
+  background: #f8f8f8;
+  color: #000000;
   border-radius: 8px;
   cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  display: flex;
 }
 .thumb-strip {
   display: flex;

@@ -1,0 +1,369 @@
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Shirt Designer - Dynamic Multi-Color SVG</title>
+<style>
+body {
+  margin: 0;
+  background: #0f1115;
+  color: #e7eaf0;
+  font-family: system-ui, sans-serif;
+  text-transform: lowercase;
+  display: flex;
+  justify-content: center;
+  padding: 10px;
+}
+.wrap {
+  display: flex;
+  gap: 16px;
+  max-width: 1200px;
+  width: 100%;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.stage-wrap {
+  background: #0b0d12;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid #111520;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+#stage {
+  position: relative;
+  display: inline-block;
+  background: #0b0d12;
+  border-radius: 8px;
+  border: 1px dashed #22283a;
+}
+#shirtImg {
+  display: block;
+  max-width: 100%;
+  max-height: 600px; /* added max size */
+  height: auto;
+}
+#overlayBox { position: absolute; border: 1px dashed #7aa2ff; cursor: grab; }
+#overlayBox.dragging { cursor: grabbing; }
+/* Fix SVG sizing to preserve aspect ratio */
+#overlayInner svg { 
+  width: 100%; 
+  height: auto; 
+  display: block; 
+}
+.handle {
+  width: 16px;
+  height: 16px;
+  background: #7aa2ff;
+  position: absolute;
+  bottom: -8px;
+  right: -8px;
+  cursor: nwse-resize;
+  border-radius: 4px;
+}
+.panel {
+  background: #171923;
+  border-radius: 12px;
+  border: 1px solid #111520;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 300px;
+}
+label { font-size: 13px; color: #a0a6b0; }
+input, select, button { font-size: 14px; }
+input[type=file], select, input[type=url], input[type=color] {
+  width: 100%;
+  padding: 6px;
+  border-radius: 8px;
+  border: 1px solid #1b2033;
+  background: #0e111a;
+  color: #e7eaf0;
+}
+input[type=range] { width: 100%; }
+button {
+  padding: 8px 12px;
+  background: #111520;
+  color: #e7eaf0;
+  border-radius: 8px;
+  border: 1px solid #161a2a;
+  cursor: pointer;
+}
+button.primary {
+  background: #7aa2ff;
+  color: #0c101a;
+  border-color: #5d83ff;
+}
+.row { display: flex; gap: 8px; align-items: center; justify-content: center; } /* center only horizontally */
+.pill { background: #0f1322; padding: 2px 6px; border-radius: 999px; font-size: 12px; }
+.color-picker-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.color-picker-row input { width: 40px; height: 30px; padding:0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="stage-wrap">
+    <div id="stage">
+      <img id="shirtImg" src="https://m.media-amazon.com/images/I/61b-DLstyyL._UY1000_.jpg" alt="shirt image">
+      <div id="overlayBox" hidden>
+        <div id="overlayInner"></div>
+        <div class="handle"></div>
+      </div>
+    </div>
+    <div class="row">
+      <button id="centerBtn">center</button>
+      <button id="fitBtn">fit chest</button>
+      <button class="primary" id="exportBtn" disabled>export</button>
+    </div>
+  </div>
+  <div class="panel">
+    <label>upload shirt</label>
+    <input type="file" id="shirtInput" accept="image/*">
+    <label>design</label>
+    <select id="svgSelect"><option value="" disabled selected>loading…</option></select>
+    <label>custom SVG URL</label>
+    <input type="url" id="customUrl" placeholder="or paste svg url">
+    <button id="loadCustomBtn">load custom</button>
+    <div id="colorPickers" class="color-picker-row"></div>
+    <label>opacity</label>
+    <input type="range" id="opacity" min="0" max="100" value="100">
+    <span class="pill" id="opacityPct">100%</span>
+    <label>size</label>
+    <input type="range" id="scale" min="10" max="120" value="40">
+    <span class="pill" id="scalePct">40%</span>
+    <label>rotation</label>
+    <input type="range" id="rotation" min="-45" max="45" value="0">
+    <span class="pill" id="rotDeg">0°</span>
+  </div>
+</div>
+
+<script>
+const GITHUB_FOLDER_API = "https://api.github.com/repos/chubblubdub/ShirtDesigner/contents/files";
+const shirtInput = document.getElementById('shirtInput');
+const shirtImg = document.getElementById('shirtImg');
+const stage = document.getElementById('stage');
+const overlayBox = document.getElementById('overlayBox');
+const overlayInner = document.getElementById('overlayInner');
+const handle = overlayBox.querySelector('.handle');
+const svgSelect = document.getElementById('svgSelect');
+const customUrl = document.getElementById('customUrl');
+const loadCustomBtn = document.getElementById('loadCustomBtn');
+const colorPickersDiv = document.getElementById('colorPickers');
+const opacityInput = document.getElementById('opacity');
+const opacityPct = document.getElementById('opacityPct');
+const scaleInput = document.getElementById('scale');
+const scalePct = document.getElementById('scalePct');
+const rotationInput = document.getElementById('rotation');
+const rotDeg = document.getElementById('rotDeg');
+const exportBtn = document.getElementById('exportBtn');
+const centerBtn = document.getElementById('centerBtn');
+const fitBtn = document.getElementById('fitBtn');
+
+let sizePct=40, rotationDeg=0, pos={xPct:50,yPct:50}, isDragging=false, isResizing=false, dragStart={}, boxStart={}, currentSVGEl=null, svgText="", fillColors=[];
+
+// Populate SVG select
+async function loadSVGList() {
+  svgSelect.innerHTML = '<option value="" disabled selected>select a design…</option>';
+  const resp = await fetch(GITHUB_FOLDER_API);
+  const files = await resp.json();
+  files.forEach(file => {
+    if(file.name.endsWith('.svg')){
+      const opt = document.createElement('option');
+      opt.value = file.download_url;
+      opt.textContent = file.name.replace('.svg','');
+      svgSelect.appendChild(opt);
+    }
+  });
+}
+loadSVGList();
+
+// Shirt loaders
+shirtInput.addEventListener('change', e=>{ if(e.target.files[0]) loadShirt(URL.createObjectURL(e.target.files[0])); });
+stage.addEventListener('dragover', e=>e.preventDefault());
+stage.addEventListener('drop', e=>{ e.preventDefault(); if(e.dataTransfer.files.length) loadShirt(URL.createObjectURL(e.dataTransfer.files[0])); });
+document.addEventListener('paste', e=>{ for(let item of e.clipboardData.items) if(item.type.indexOf("image")!==-1) loadShirt(URL.createObjectURL(item.getAsFile())); });
+
+function loadShirt(src){
+  const img = new Image();
+  img.src = src;
+  img.onload=()=>{
+    // Limit image to max 600px while preserving aspect ratio
+    let w = img.width, h = img.height;
+    const maxDim = 600;
+    if(w > h && w > maxDim) { h = h * (maxDim/w); w = maxDim; }
+    else if(h >= w && h > maxDim) { w = w * (maxDim/h); h = maxDim; }
+    shirtImg.src = src;
+    shirtImg.width = w;
+    shirtImg.height = h;
+    stage.style.width=w+"px"; 
+    stage.style.height=h+"px"; 
+    exportBtn.disabled=false; 
+  };
+}
+
+// Load SVG
+svgSelect.addEventListener('change', ()=>loadSVG(svgSelect.value));
+loadCustomBtn.addEventListener('click', ()=>loadSVG(customUrl.value));
+
+async function loadSVG(url){
+  if(!url) return;
+  svgText = await (await fetch(url)).text();
+  svgText = svgText.replace(/<style[\s\S]*?<\/style>/gi,"");
+  overlayInner.innerHTML = svgText;
+  currentSVGEl = overlayInner.querySelector('svg');
+  if(!currentSVGEl) return;
+  setupColorPickers();
+  overlayBox.hidden=false;
+  overlayBox.style.border='1px dashed #7aa2ff';
+  handle.style.display='block';
+  setOverlayTransform();
+}
+
+let pickerMap = []; // { lastColor: '#xxxxxx', input: HTMLInputElement }
+
+function setupColorPickers() {
+  if (!svgText) return;
+
+  const parser = new DOMParser();
+  const svgDoc = parser.parseFromString(svgText, "image/svg+xml");
+  const svgEl = svgDoc.querySelector('svg');
+  if (!svgEl) return;
+
+  const fillsSet = new Set();
+
+  // Collect fills from 'fill' attributes
+  [...svgEl.querySelectorAll('[fill]')].forEach(el => {
+    const f = el.getAttribute('fill');
+    if (f && f !== 'none' && !f.startsWith('url(')) fillsSet.add(f);
+  });
+
+  // Collect fills from inline style attributes
+  [...svgEl.querySelectorAll('[style]')].forEach(el => {
+    const match = el.getAttribute('style').match(/fill\s*:\s*([^;]+)/i);
+    if (match) {
+      const f = match[1].trim();
+      if (f && f !== 'none' && !f.startsWith('url(')) fillsSet.add(f);
+    }
+  });
+
+  colorPickersDiv.innerHTML = '';
+  pickerMap = [];
+
+  Array.from(fillsSet).forEach(color => {
+    const input = document.createElement('select'); // replace with select
+    input.innerHTML = `
+      <option value="#000000">black</option>
+      <option value="#ffffff">white</option>
+      <option value="#d40000">red</option>
+    `;
+    input.value = color.toLowerCase() || "#000000";
+    pickerMap.push({ lastColor: color, input });
+    input.addEventListener('change', () => {
+      applyColorChange(pickerMap.find(p => p.input === input), input.value);
+    });
+    colorPickersDiv.appendChild(input);
+  });
+
+  overlayInner.innerHTML = new XMLSerializer().serializeToString(svgEl);
+  currentSVGEl = overlayInner.querySelector('svg');
+}
+
+function applyColorChange(picker, newColor) {
+  if (!currentSVGEl) return;
+
+  [...currentSVGEl.querySelectorAll('[fill]')].forEach(el => {
+    if (el.getAttribute('fill')?.toLowerCase() === picker.lastColor.toLowerCase()) {
+      el.setAttribute('fill', newColor);
+    }
+  });
+
+  [...currentSVGEl.querySelectorAll('[style]')].forEach(el => {
+    const styleObj = {};
+    el.getAttribute('style').split(';').forEach(s => {
+      const [prop, val] = s.split(':').map(x => x.trim());
+      if (prop) styleObj[prop] = val;
+    });
+    if (styleObj['fill']?.toLowerCase() === picker.lastColor.toLowerCase()) {
+      styleObj['fill'] = newColor;
+      const newStyle = Object.entries(styleObj).map(([k,v]) => `${k}:${v}`).join(';');
+      el.setAttribute('style', newStyle);
+    }
+  });
+
+  picker.lastColor = newColor;
+}
+
+// Overlay transform
+overlayBox.addEventListener('mousedown', e=>{
+  if(e.target===handle) isResizing=true; else isDragging=true;
+  dragStart={x:e.clientX, y:e.clientY};
+  boxStart={...pos, size:sizePct};
+  overlayBox.classList.add('dragging');
+});
+document.addEventListener('mousemove', e=>{
+  if(isDragging){
+    const rect=stage.getBoundingClientRect();
+    pos.xPct=boxStart.xPct + (e.clientX-dragStart.x)/rect.width*100;
+    pos.yPct=boxStart.yPct + (e.clientY-dragStart.y)/rect.height*100;
+    setOverlayTransform();
+  }
+  if(isResizing){
+    const rect=stage.getBoundingClientRect();
+    sizePct=Math.max(5, boxStart.size + (e.clientX-dragStart.x)/rect.width*100);
+    scalePct.textContent=Math.round(sizePct)+"%";
+    setOverlayTransform();
+  }
+});
+document.addEventListener('mouseup', ()=>{ isDragging=false; isResizing=false; overlayBox.classList.remove('dragging'); });
+
+function setOverlayTransform(){
+  overlayBox.style.left=pos.xPct+"%";
+  overlayBox.style.top=pos.yPct+"%";
+  overlayBox.style.width=sizePct+"%";
+  overlayBox.style.transform=`translate(-50%,-50%) rotate(${rotationDeg}deg)`;
+}
+
+// Hide overlay border when clicking outside
+document.addEventListener('click', e=>{
+  if(!overlayBox.contains(e.target) && e.target!==svgSelect && e.target!==loadCustomBtn){
+    overlayBox.style.border='none';
+    handle.style.display='none';
+  } else {
+    overlayBox.style.border='1px dashed #7aa2ff';
+    handle.style.display='block';
+  }
+});
+
+// UI events
+opacityInput.addEventListener('input', ()=>{ opacityPct.textContent=opacityInput.value+"%"; overlayBox.style.opacity=opacityInput.value/100; });
+scaleInput.addEventListener('input', ()=>{ sizePct=parseInt(scaleInput.value); scalePct.textContent=sizePct+"%"; setOverlayTransform(); });
+rotationInput.addEventListener('input', ()=>{ rotationDeg=parseInt(rotationInput.value); rotDeg.textContent=rotationDeg+"°"; setOverlayTransform(); });
+centerBtn.addEventListener('click', ()=>{ pos.xPct=50; setOverlayTransform(); }); // horizontal only
+fitBtn.addEventListener('click', ()=>{ sizePct=50; pos={xPct:50,yPct:35}; setOverlayTransform(); });
+
+// Export
+exportBtn.addEventListener('click', ()=>{
+  const canvas=document.createElement('canvas');
+  canvas.width=shirtImg.width;
+  canvas.height=shirtImg.height;
+  const ctx=canvas.getContext('2d');
+  ctx.drawImage(shirtImg,0,0);
+  const svgData=new XMLSerializer().serializeToString(overlayInner.firstChild);
+  const img=new Image();
+  const svgBlob=new Blob([svgData],{type:"image/svg+xml;charset=utf-8"});
+  const url=URL.createObjectURL(svgBlob);
+  img.onload=()=>{
+    ctx.globalAlpha=overlayBox.style.opacity || 1;
+    const ow=overlayBox.offsetWidth, oh=overlayBox.offsetHeight;
+    const ox=(pos.xPct/100)*shirtImg.width-ow/2, oy=(pos.yPct/100)*shirtImg.height-oh/2;
+    ctx.drawImage(img, ox, oy, ow, oh);
+    const link=document.createElement('a'); link.download="shirt_mockup.png"; link.href=canvas.toDataURL(); link.click();
+  };
+  img.src=url;
+});
+</script>
+</body>
+</html>

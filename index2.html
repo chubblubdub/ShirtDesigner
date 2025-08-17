@@ -6,7 +6,7 @@
 <style>
 body {
   margin: 0;
-  background: #0f1115;
+  background: #ffffff;
   color: #e7eaf0;
   font-family: system-ui, sans-serif;
   text-transform: lowercase;
@@ -23,10 +23,10 @@ body {
   justify-content: center;
 }
 .stage-wrap {
-  background: #0b0d12;
+  background: #f8f8f8;
   padding: 10px;
   border-radius: 12px;
-  border: 1px solid #111520;
+  border: 1px solid #a8a8a8;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -35,14 +35,14 @@ body {
 #stage {
   position: relative;
   display: inline-block;
-  background: #0b0d12;
+  background: #ffffff;
   border-radius: 8px;
-  border: 1px dashed #22283a;
+  border: 1px dashed #a8a8a8;
 }
 #shirtImg {
   display: block;
   max-width: 100%;
-  max-height: 600px; /* added max size */
+  max-height: 700px; /* added max size */
   height: auto;
 }
 #overlayBox { position: absolute; border: 1px dashed #7aa2ff; cursor: grab; }
@@ -64,23 +64,23 @@ body {
   border-radius: 4px;
 }
 .panel {
-  background: #171923;
+  background: #d40000;
   border-radius: 12px;
-  border: 1px solid #111520;
+  border: 1px solid #a8a8a8;
   padding: 12px;
   display: flex;
   flex-direction: column;
   gap: 12px;
   max-width: 300px;
 }
-label { font-size: 13px; color: #a0a6b0; }
+label { font-size: 13px; color: #ffffff; }
 input, select, button { font-size: 14px; }
 input[type=file], select, input[type=url], input[type=color] {
   width: 100%;
   padding: 6px;
   border-radius: 8px;
   border: 1px solid #1b2033;
-  background: #0e111a;
+  background: #000000;
   color: #e7eaf0;
 }
 input[type=range] { width: 100%; }
@@ -101,32 +101,77 @@ button.primary {
 .pill { background: #0f1322; padding: 2px 6px; border-radius: 999px; font-size: 12px; }
 .color-picker-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .color-picker-row input { width: 40px; height: 30px; padding:0; }
+
+/* carousel (small thumbnails under shirt) */
+.carousel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 0px;
+}
+.carousel-btn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #161a2a;
+  background: #111520;
+  color: #e7eaf0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.thumb-strip {
+  display: flex;
+  gap: 6px;
+  overflow: hidden;
+  padding: 4px 6px;
+  border-radius: 8px;
+}
+.thumb {
+  width: 56px;        /* small previews */
+  height: auto;
+  border-radius: 12px;
+  border: 1px solid #a8a8a8;
+  opacity: 1;
+  cursor: pointer;
+}
+.thumb.active {
+  border: 2px solid #000000;
+  border-radius: 12px;
+  opacity: 1;
+}
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="stage-wrap">
     <div id="stage">
-      <img id="shirtImg" src="https://m.media-amazon.com/images/I/61b-DLstyyL._UY1000_.jpg" alt="shirt image">
+      <img id="shirtImg" src="https://jiffyimg.imgix.net/77b1ea2074c5d1.jpg?ixlib=rb-0.3.5&auto=format&fit=fill&fill=solid&trim-color=FFFFFF&trim=color&trim-tol=8&w=307&h=480&dpr=2" alt="shirt image">
       <div id="overlayBox" hidden>
         <div id="overlayInner"></div>
         <div class="handle"></div>
       </div>
     </div>
+
+    <!-- small carousel just below the shirt -->
+    <div class="carousel">
+      <button id="prevShirt" class="carousel-btn" aria-label="previous">◀</button>
+      <div id="thumbStrip" class="thumb-strip"></div>
+      <button id="nextShirt" class="carousel-btn" aria-label="next">▶</button>
+    </div>
+
     <div class="row">
       <button id="centerBtn">center</button>
       <button id="fitBtn">fit chest</button>
       <button class="primary" id="exportBtn" disabled>export</button>
     </div>
   </div>
+
   <div class="panel">
     <label>upload shirt</label>
     <input type="file" id="shirtInput" accept="image/*">
     <label>design</label>
     <select id="svgSelect"><option value="" disabled selected>loading…</option></select>
-    <label>custom SVG URL</label>
-    <input type="url" id="customUrl" placeholder="or paste svg url">
-    <button id="loadCustomBtn">load custom</button>
+    <button id="reloadBtn">reload</button>
+    <!-- removed custom svg url + load button -->
     <div id="colorPickers" class="color-picker-row"></div>
     <label>opacity</label>
     <input type="range" id="opacity" min="0" max="100" value="100">
@@ -149,8 +194,7 @@ const overlayBox = document.getElementById('overlayBox');
 const overlayInner = document.getElementById('overlayInner');
 const handle = overlayBox.querySelector('.handle');
 const svgSelect = document.getElementById('svgSelect');
-const customUrl = document.getElementById('customUrl');
-const loadCustomBtn = document.getElementById('loadCustomBtn');
+const reloadBtn = document.getElementById('reloadBtn'); // keep reload
 const colorPickersDiv = document.getElementById('colorPickers');
 const opacityInput = document.getElementById('opacity');
 const opacityPct = document.getElementById('opacityPct');
@@ -161,6 +205,11 @@ const rotDeg = document.getElementById('rotDeg');
 const exportBtn = document.getElementById('exportBtn');
 const centerBtn = document.getElementById('centerBtn');
 const fitBtn = document.getElementById('fitBtn');
+
+/* carousel nodes */
+const prevShirtBtn = document.getElementById('prevShirt');
+const nextShirtBtn = document.getElementById('nextShirt');
+const thumbStrip = document.getElementById('thumbStrip');
 
 let sizePct=40, rotationDeg=0, pos={xPct:50,yPct:50}, isDragging=false, isResizing=false, dragStart={}, boxStart={}, currentSVGEl=null, svgText="", fillColors=[];
 
@@ -192,21 +241,26 @@ function loadShirt(src){
   img.onload=()=>{
     // Limit image to max 600px while preserving aspect ratio
     let w = img.width, h = img.height;
-    const maxDim = 600;
+    const maxDim = 700;
     if(w > h && w > maxDim) { h = h * (maxDim/w); w = maxDim; }
     else if(h >= w && h > maxDim) { w = w * (maxDim/h); h = maxDim; }
     shirtImg.src = src;
     shirtImg.width = w;
     shirtImg.height = h;
-    stage.style.width=w+"px"; 
-    stage.style.height=h+"px"; 
-    exportBtn.disabled=false; 
+    stage.style.width=w+"px";
+    stage.style.height=h+"px";
+    exportBtn.disabled=false;
   };
 }
 
 // Load SVG
 svgSelect.addEventListener('change', ()=>loadSVG(svgSelect.value));
-loadCustomBtn.addEventListener('click', ()=>loadSVG(customUrl.value));
+
+// Reload current design (from selector)
+reloadBtn.addEventListener('click', ()=>{
+  const url = svgSelect.value;
+  if (url) loadSVG(url);
+});
 
 async function loadSVG(url){
   if(!url) return;
@@ -222,7 +276,7 @@ async function loadSVG(url){
   setOverlayTransform();
 }
 
-let pickerMap = []; // { lastColor: '#xxxxxx', input: HTMLInputElement }
+let pickerMap = []; // { lastColor: '#xxxxxx', input: HTMLSelectElement }
 
 function setupColorPickers() {
   if (!svgText) return;
@@ -253,7 +307,7 @@ function setupColorPickers() {
   pickerMap = [];
 
   Array.from(fillsSet).forEach(color => {
-    const input = document.createElement('select'); // replace with select
+    const input = document.createElement('select'); // limited palette
     input.innerHTML = `
       <option value="#000000">black</option>
       <option value="#ffffff">white</option>
@@ -328,7 +382,7 @@ function setOverlayTransform(){
 
 // Hide overlay border when clicking outside
 document.addEventListener('click', e=>{
-  if(!overlayBox.contains(e.target) && e.target!==svgSelect && e.target!==loadCustomBtn){
+  if(!overlayBox.contains(e.target) && e.target!==svgSelect && e.target!==reloadBtn){
     overlayBox.style.border='none';
     handle.style.display='none';
   } else {
@@ -364,6 +418,49 @@ exportBtn.addEventListener('click', ()=>{
   };
   img.src=url;
 });
+
+/* ---------- carousel logic (small previews + arrows) ---------- */
+const shirtImages = [
+  "https://jiffyimg.imgix.net/77b1ea2074c5d1.jpg?ixlib=rb-0.3.5&auto=format&fit=fill&fill=solid&trim-color=FFFFFF&trim=color&trim-tol=8&w=307&h=480&dpr=2",
+  "https://jiffyimg.imgix.net/269d2746fa9623.jpg?ixlib=rb-0.3.5&auto=format&fit=fill&fill=solid&trim-color=FFFFFF&trim=color&trim-tol=8&w=307&h=480&q=80&dpr=2",
+  "https://jiffyimg.imgix.net/85c0566a0cc35a.jpg?ixlib=rb-0.3.5&auto=format&fit=fill&fill=solid&trim-color=FFFFFF&trim=color&trim-tol=8&w=307&h=480&q=80&dpr=2",
+  "https://jiffy.imgix.net/6679eac1dc8872.jpg?ixlib=rb-0.3.5&auto=format&fit=fill&fill=solid&trim-color=FFFFFF&trim=color&trim-tol=8&w=307&h=480&dpr=2",
+  "https://jiffyimg.imgix.net/ce5eafee37c17c.jpg?ixlib=rb-0.3.5&auto=format&fit=fill&fill=solid&trim-color=FFFFFF&trim=color&trim-tol=8&w=307&h=480&dpr=2"
+];
+
+let currentShirtIndex = 0;
+
+function renderThumbs() {
+  thumbStrip.innerHTML = '';
+  shirtImages.forEach((src, i) => {
+    const t = document.createElement('img');
+    t.src = src;
+    t.className = 'thumb' + (i===currentShirtIndex ? ' active' : '');
+    t.addEventListener('click', () => {
+      currentShirtIndex = i;
+      updateShirtFromCarousel();
+    });
+    thumbStrip.appendChild(t);
+  });
+}
+
+function updateShirtFromCarousel() {
+  loadShirt(shirtImages[currentShirtIndex]);
+  renderThumbs();
+}
+
+prevShirtBtn.addEventListener('click', ()=>{
+  currentShirtIndex = (currentShirtIndex - 1 + shirtImages.length) % shirtImages.length;
+  updateShirtFromCarousel();
+});
+
+nextShirtBtn.addEventListener('click', ()=>{
+  currentShirtIndex = (currentShirtIndex + 1) % shirtImages.length;
+  updateShirtFromCarousel();
+});
+
+renderThumbs();
+/* -------------------------------------------------------------- */
 </script>
 </body>
 </html>

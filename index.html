@@ -84,7 +84,7 @@ label {
 input, select, button {
   font-size: 14px;
 }
-input[type=file], select, input[type=url], input[type=color] {
+input[type=file], select, input[type=url] {
   width: 100%;
   padding: 6px;
   border-radius: 8px;
@@ -144,8 +144,6 @@ button.primary {
     <select id="svgSelect"></select>
     <input type="url" id="customUrl" placeholder="or paste svg url">
     <button id="loadCustomBtn">load custom</button>
-    <label>color</label>
-    <input type="color" id="color" value="#000000">
     <label>opacity</label>
     <input type="range" id="opacity" min="0" max="100" value="100">
     <span class="pill" id="opacityPct">100%</span>
@@ -165,6 +163,7 @@ const SVG_LIST = [
   { label: "heart", url: "https://raw.githubusercontent.com/chubblubdub/ShirtDesigner/main/heart.svg" },
   { label: "squiggle", url: "https://raw.githubusercontent.com/chubblubdub/ShirtDesigner/main/squiggle.svg" },
 ];
+
 const shirtInput = document.getElementById('shirtInput');
 const shirtImg = document.getElementById('shirtImg');
 const stage = document.getElementById('stage');
@@ -174,7 +173,6 @@ const handle = overlayBox.querySelector('.handle');
 const svgSelect = document.getElementById('svgSelect');
 const customUrl = document.getElementById('customUrl');
 const loadCustomBtn = document.getElementById('loadCustomBtn');
-const colorInput = document.getElementById('color');
 const opacityInput = document.getElementById('opacity');
 const opacityPct = document.getElementById('opacityPct');
 const scaleInput = document.getElementById('scale');
@@ -184,9 +182,8 @@ const rotDeg = document.getElementById('rotDeg');
 const exportBtn = document.getElementById('exportBtn');
 const centerBtn = document.getElementById('centerBtn');
 const fitBtn = document.getElementById('fitBtn');
-let sizePct = 40, rotationDeg = 0, pos = { xPct: 50, yPct: 50 }, isDragging=false, dragStart={}, boxStart={};
-let isResizing = false;           // (existing behavior relies on this)
-let currentSVGEl = null;          // added: reference to the loaded SVG root
+
+let sizePct = 40, rotationDeg = 0, pos = { xPct: 50, yPct: 50 }, isDragging=false, isResizing=false, dragStart={}, boxStart={}, currentSVGEl=null;
 
 // populate design list
 SVG_LIST.forEach(({label,url},i)=>{
@@ -198,104 +195,46 @@ SVG_LIST.forEach(({label,url},i)=>{
 // shirt loaders
 shirtInput.addEventListener('change', e=>{
   const file = e.target.files[0];
-  if(file){
-    const url = URL.createObjectURL(file);
-    loadShirt(url);
-  }
+  if(file) loadShirt(URL.createObjectURL(file));
 });
 stage.addEventListener('dragover', e=>{e.preventDefault();});
 stage.addEventListener('drop', e=>{
   e.preventDefault();
   if(e.dataTransfer.files.length){
-    const file=e.dataTransfer.files[0];
-    loadShirt(URL.createObjectURL(file));
+    loadShirt(URL.createObjectURL(e.dataTransfer.files[0]));
   }
 });
 document.addEventListener('paste', e=>{
-  const items = e.clipboardData.items;
-  for(let item of items){
-    if(item.type.indexOf("image")!==-1){
-      const blob = item.getAsFile();
-      loadShirt(URL.createObjectURL(blob));
-    }
+  for(let item of e.clipboardData.items){
+    if(item.type.indexOf("image")!==-1)
+      loadShirt(URL.createObjectURL(item.getAsFile()));
   }
 });
 function loadShirt(src){
   shirtImg.src=src;
-  shirtImg.onload=()=>{
-    stage.style.width=shirtImg.width+"px";
-    stage.style.height=shirtImg.height+"px";
-    exportBtn.disabled=false;
-  };
+  shirtImg.onload=()=>{ stage.style.width=shirtImg.width+"px"; stage.style.height=shirtImg.height+"px"; exportBtn.disabled=false; };
 }
 
-// design loaders
+// design loaders forcing neon pink
 svgSelect.addEventListener('change', ()=>loadSVG(svgSelect.value));
 loadCustomBtn.addEventListener('click', ()=>loadSVG(customUrl.value));
 
-// --- UPDATED: robust SVG color handling (force currentColor, then drive via CSS) ---
 async function loadSVG(url){
   if(!url) return;
-  const resp = await fetch(url);
-  let text = await resp.text();
-
-  // Remove any <style> blocks that might override fills/strokes
+  let text = await (await fetch(url)).text();
   text = text.replace(/<style[\s\S]*?<\/style>/gi, "");
-
-  // Force all fills/strokes to currentColor so we can recolor via CSS
-  text = text.replace(/fill="(.*?)"/gi, (m, v) => /none/i.test(v) ? m : 'fill="currentColor"');
-  text = text.replace(/stroke="(.*?)"/gi, (m, v) => /none/i.test(v) ? m : 'stroke="currentColor"');
-
+  text = text.replace(/fill="(.*?)"/gi, 'fill="currentColor"');
+  text = text.replace(/stroke="(.*?)"/gi, 'stroke="currentColor"');
   overlayInner.innerHTML = text;
   currentSVGEl = overlayInner.querySelector('svg');
-
-  if (currentSVGEl) {
-    currentSVGEl.style.color = colorInput.value; // initial color
-  }
-
-  overlayBox.hidden = false;
+  if(currentSVGEl) currentSVGEl.style.color="#FF00FF"; // forced neon pink
+  overlayBox.hidden=false;
   setOverlayTransform();
 }
 
-// recolor by updating CSS currentColor on the SVG root
-function applyColor(root, color){
-  if (root) root.style.color = color;
-}
-
-colorInput.addEventListener('input', ()=>{
-  if (currentSVGEl) applyColor(currentSVGEl, colorInput.value);
-});
-
-opacityInput.addEventListener('input', ()=>{
-  opacityPct.textContent=opacityInput.value+"%";
-  overlayBox.style.opacity=opacityInput.value/100;
-});
-scaleInput.addEventListener('input', ()=>{
-  sizePct=parseInt(scaleInput.value);
-  scalePct.textContent=sizePct+"%";
-  setOverlayTransform();
-});
-rotationInput.addEventListener('input', ()=>{
-  rotationDeg=parseInt(rotationInput.value);
-  rotDeg.textContent=rotationDeg+"°";
-  setOverlayTransform();
-});
-centerBtn.addEventListener('click', ()=>{
-  pos={xPct:50,yPct:50};
-  setOverlayTransform();
-});
-fitBtn.addEventListener('click', ()=>{
-  sizePct=50; pos={xPct:50,yPct:35};
-  setOverlayTransform();
-});
-
-// drag / resize
+// drag/resize
 overlayBox.addEventListener('mousedown', e=>{
-  if(e.target===handle){
-    isResizing=true;
-  } else {
-    isDragging=true;
-  }
+  if(e.target===handle) isResizing=true; else isDragging=true;
   dragStart={x:e.clientX, y:e.clientY};
   boxStart={...pos, size:sizePct};
   overlayBox.classList.add('dragging');
@@ -303,16 +242,13 @@ overlayBox.addEventListener('mousedown', e=>{
 document.addEventListener('mousemove', e=>{
   if(isDragging){
     const rect=stage.getBoundingClientRect();
-    const dx=(e.clientX-dragStart.x)/rect.width*100;
-    const dy=(e.clientY-dragStart.y)/rect.height*100;
-    pos.xPct=boxStart.xPct+dx;
-    pos.yPct=boxStart.yPct+dy;
+    pos.xPct=boxStart.xPct + (e.clientX-dragStart.x)/rect.width*100;
+    pos.yPct=boxStart.yPct + (e.clientY-dragStart.y)/rect.height*100;
     setOverlayTransform();
   }
   if(isResizing){
     const rect=stage.getBoundingClientRect();
-    const dx=(e.clientX-dragStart.x)/rect.width*100;
-    sizePct=Math.max(5, boxStart.size+dx);
+    sizePct=Math.max(5, boxStart.size + (e.clientX-dragStart.x)/rect.width*100);
     scalePct.textContent=Math.round(sizePct)+"%";
     setOverlayTransform();
   }
@@ -330,6 +266,33 @@ function setOverlayTransform(){
   overlayBox.style.transform=`translate(-50%,-50%) rotate(${rotationDeg}deg)`;
 }
 
+opacityInput.addEventListener('input', ()=>{
+  opacityPct.textContent=opacityInput.value+"%";
+  overlayBox.style.opacity=opacityInput.value/100;
+});
+
+scaleInput.addEventListener('input', ()=>{
+  sizePct=parseInt(scaleInput.value);
+  scalePct.textContent=sizePct+"%";
+  setOverlayTransform();
+});
+
+rotationInput.addEventListener('input', ()=>{
+  rotationDeg=parseInt(rotationInput.value);
+  rotDeg.textContent=rotationDeg+"°";
+  setOverlayTransform();
+});
+
+centerBtn.addEventListener('click', ()=>{
+  pos={xPct:50,yPct:50};
+  setOverlayTransform();
+});
+
+fitBtn.addEventListener('click', ()=>{
+  sizePct=50; pos={xPct:50,yPct:35};
+  setOverlayTransform();
+});
+
 exportBtn.addEventListener('click', ()=>{
   const canvas=document.createElement('canvas');
   canvas.width=shirtImg.width;
@@ -337,7 +300,6 @@ exportBtn.addEventListener('click', ()=>{
   const ctx=canvas.getContext('2d');
   ctx.drawImage(shirtImg,0,0);
 
-  // Use the currently in-DOM SVG (already color-forced via currentColor)
   const svgData=new XMLSerializer().serializeToString(overlayInner.firstChild);
   const img=new Image();
   const svgBlob=new Blob([svgData],{type:"image/svg+xml;charset=utf-8"});

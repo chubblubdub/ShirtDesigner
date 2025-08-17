@@ -39,7 +39,12 @@ body {
   border-radius: 8px;
   border: 1px dashed #22283a;
 }
-#shirtImg { display: block; max-width: 100%; height: auto; }
+#shirtImg {
+  display: block;
+  max-width: 100%;
+  max-height: 600px; /* added max size */
+  height: auto;
+}
 #overlayBox { position: absolute; border: 1px dashed #7aa2ff; cursor: grab; }
 #overlayBox.dragging { cursor: grabbing; }
 /* Fix SVG sizing to preserve aspect ratio */
@@ -92,7 +97,7 @@ button.primary {
   color: #0c101a;
   border-color: #5d83ff;
 }
-.row { display: flex; gap: 8px; align-items: center; }
+.row { display: flex; gap: 8px; align-items: center; justify-content: center; } /* center only horizontally */
 .pill { background: #0f1322; padding: 2px 6px; border-radius: 999px; font-size: 12px; }
 .color-picker-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .color-picker-row input { width: 40px; height: 30px; padding:0; }
@@ -182,10 +187,19 @@ stage.addEventListener('drop', e=>{ e.preventDefault(); if(e.dataTransfer.files.
 document.addEventListener('paste', e=>{ for(let item of e.clipboardData.items) if(item.type.indexOf("image")!==-1) loadShirt(URL.createObjectURL(item.getAsFile())); });
 
 function loadShirt(src){
-  shirtImg.src=src;
-  shirtImg.onload=()=>{ 
-    stage.style.width=shirtImg.width+"px"; 
-    stage.style.height=shirtImg.height+"px"; 
+  const img = new Image();
+  img.src = src;
+  img.onload=()=>{
+    // Limit image to max 600px while preserving aspect ratio
+    let w = img.width, h = img.height;
+    const maxDim = 600;
+    if(w > h && w > maxDim) { h = h * (maxDim/w); w = maxDim; }
+    else if(h >= w && h > maxDim) { w = w * (maxDim/h); h = maxDim; }
+    shirtImg.src = src;
+    shirtImg.width = w;
+    shirtImg.height = h;
+    stage.style.width=w+"px"; 
+    stage.style.height=h+"px"; 
     exportBtn.disabled=false; 
   };
 }
@@ -239,16 +253,17 @@ function setupColorPickers() {
   pickerMap = [];
 
   Array.from(fillsSet).forEach(color => {
-    const input = document.createElement('input');
-    input.type = 'color';
-    try { input.value = color; } catch { input.value = '#ffffff'; }
-
+    const input = document.createElement('select'); // replace with select
+    input.innerHTML = `
+      <option value="#000000">black</option>
+      <option value="#ffffff">white</option>
+      <option value="#d40000">red</option>
+    `;
+    input.value = color.toLowerCase() || "#000000";
     pickerMap.push({ lastColor: color, input });
-
-    input.addEventListener('input', () => {
+    input.addEventListener('change', () => {
       applyColorChange(pickerMap.find(p => p.input === input), input.value);
     });
-
     colorPickersDiv.appendChild(input);
   });
 
@@ -259,14 +274,12 @@ function setupColorPickers() {
 function applyColorChange(picker, newColor) {
   if (!currentSVGEl) return;
 
-  // Update 'fill' attributes
   [...currentSVGEl.querySelectorAll('[fill]')].forEach(el => {
     if (el.getAttribute('fill')?.toLowerCase() === picker.lastColor.toLowerCase()) {
       el.setAttribute('fill', newColor);
     }
   });
 
-  // Update inline style fills element by element
   [...currentSVGEl.querySelectorAll('[style]')].forEach(el => {
     const styleObj = {};
     el.getAttribute('style').split(';').forEach(s => {
@@ -280,10 +293,8 @@ function applyColorChange(picker, newColor) {
     }
   });
 
-  picker.lastColor = newColor; // update the picker's lastColor
+  picker.lastColor = newColor;
 }
-
-
 
 // Overlay transform
 overlayBox.addEventListener('mousedown', e=>{
@@ -330,7 +341,7 @@ document.addEventListener('click', e=>{
 opacityInput.addEventListener('input', ()=>{ opacityPct.textContent=opacityInput.value+"%"; overlayBox.style.opacity=opacityInput.value/100; });
 scaleInput.addEventListener('input', ()=>{ sizePct=parseInt(scaleInput.value); scalePct.textContent=sizePct+"%"; setOverlayTransform(); });
 rotationInput.addEventListener('input', ()=>{ rotationDeg=parseInt(rotationInput.value); rotDeg.textContent=rotationDeg+"°"; setOverlayTransform(); });
-centerBtn.addEventListener('click', ()=>{ pos={xPct:50,yPct:50}; setOverlayTransform(); });
+centerBtn.addEventListener('click', ()=>{ pos.xPct=50; setOverlayTransform(); }); // horizontal only
 fitBtn.addEventListener('click', ()=>{ sizePct=50; pos={xPct:50,yPct:35}; setOverlayTransform(); });
 
 // Export

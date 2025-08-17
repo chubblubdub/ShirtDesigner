@@ -1,14 +1,19 @@
+<!DOCTYPE html>
+</html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Shirt Designer - Dynamic Multi-Color SVG</title>
+<!-- Load Montserrat from Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
 <style>
 body {
   margin: 0;
   background: #ffffff;
-  color: #e7eaf0;
-  font-family: system-ui, sans-serif;
+  color: #000000;
+  font-family: 'Montserrat', sans-serif; /* changed from system-ui */
+  font-weight: 700;
   text-transform: lowercase;
   display: flex;
   justify-content: center;
@@ -42,7 +47,7 @@ body {
 #shirtImg {
   display: block;
   max-width: 100%;
-  max-height: 700px; /* added max size */
+  max-height: 600px; /* added max size */
   height: auto;
 }
 #overlayBox {
@@ -73,9 +78,10 @@ body {
 }
 
 .handle {
-  width: 16px;
-  height: 16px;
-  background: #7aa2ff;
+  width: 12px;
+  height: 12px;
+  background: #ffffff;
+  border: 2px solid #000000;
   position: absolute;
   bottom: -8px;
   right: -8px;
@@ -166,7 +172,7 @@ button.primary {
 <div class="wrap">
   <div class="stage-wrap">
     <div id="stage">
-      <img id="shirtImg" src="https://jiffyimg.imgix.net/77b1ea2074c5d1.jpg?ixlib=rb-0.3.5&auto=format&fit=fill&fill=solid&trim-color=FFFFFF&trim=color&trim-tol=8&w=307&h=480&dpr=2" alt="shirt image">
+      <img id="shirtImg" src="https://jiffyimg.imgix.net/77b1ea2074c5d1.jpg?ixlib=rb-0.3.5&auto=format&fit=fill&fill=solid&trim-color=FFFFFF&trim=color&trim-tol=8&w=307&h=400&dpr=2" alt="shirt image">
       <div id="overlayBox" hidden>
         <div id="overlayInner"></div>
         <div class="handle"></div>
@@ -188,23 +194,32 @@ button.primary {
   </div>
 
   <div class="panel">
-    <label>upload shirt</label>
-    <input type="file" id="shirtInput" accept="image/*">
-    <label>design</label>
-    <select id="svgSelect"><option value="" disabled selected>loading…</option></select>
-    <button id="reloadBtn">reload</button>
-    <!-- removed custom svg url + load button -->
-    <div id="colorPickers" class="color-picker-row"></div>
-    <label>opacity</label>
-    <input type="range" id="opacity" min="0" max="100" value="100">
-    <span class="pill" id="opacityPct">100%</span>
-    <label>size</label>
-    <input type="range" id="scale" min="10" max="120" value="40">
-    <span class="pill" id="scalePct">40%</span>
-    <label>rotation</label>
-    <input type="range" id="rotation" min="-45" max="45" value="0">
-    <span class="pill" id="rotDeg">0°</span>
+  <label>upload shirt</label>
+  <input type="file" id="shirtInput" accept="image/*">
+
+  <label>design</label>
+  <select id="svgSelect"><option value="" disabled selected>loading…</option></select>
+  <button id="reloadBtn">reload</button>
+
+  <div id="colorPickers" class="color-picker-row"></div>
+
+  <div class="control-row">
+    <label for="scale">size - <span id="scalePct">40%</span></label>
+    <input type="range" id="scale" min="10" max="100" value="40">
   </div>
+
+  <div class="control-row">
+    <label for="opacity">opacity - <span id="opacityPct">100%</span></label>
+    <input type="range" id="opacity" min="0" max="100" value="100">
+  </div>
+
+  <div class="control-row">
+    <label for="rotation">rotation - <span id="rotDeg">0°</span></label>
+    <input type="range" id="rotation" min="-20" max="20" value="0">
+  </div>
+</div>
+
+    
 </div>
 
 <script>
@@ -263,7 +278,7 @@ function loadShirt(src){
   img.onload=()=>{
     // Limit image to max 600px while preserving aspect ratio
     let w = img.width, h = img.height;
-    const maxDim = 700;
+    const maxDim = 600;
     if(w > h && w > maxDim) { h = h * (maxDim/w); w = maxDim; }
     else if(h >= w && h > maxDim) { w = w * (maxDim/h); h = maxDim; }
     shirtImg.src = src;
@@ -443,11 +458,11 @@ exportBtn.addEventListener('click', ()=>{
 
 /* ---------- carousel logic (small previews + arrows) ---------- */
 const shirtImages = [
-  "https://jiffyimg.imgix.net/77b1ea2074c5d1.jpg?ixlib=rb-0.3.5&auto=format&fit=fill&fill=solid&trim-color=FFFFFF&trim=color&trim-tol=8&w=307&h=480&dpr=2",
-  "https://jiffyimg.imgix.net/269d2746fa9623.jpg?ixlib=rb-0.3.5&auto=format&fit=fill&fill=solid&trim-color=FFFFFF&trim=color&trim-tol=8&w=307&h=480&q=80&dpr=2",
-  "https://jiffyimg.imgix.net/85c0566a0cc35a.jpg?ixlib=rb-0.3.5&auto=format&fit=fill&fill=solid&trim-color=FFFFFF&trim=color&trim-tol=8&w=307&h=480&q=80&dpr=2",
-  "https://jiffy.imgix.net/6679eac1dc8872.jpg?ixlib=rb-0.3.5&auto=format&fit=fill&fill=solid&trim-color=FFFFFF&trim=color&trim-tol=8&w=307&h=480&dpr=2",
-  "https://jiffyimg.imgix.net/ce5eafee37c17c.jpg?ixlib=rb-0.3.5&auto=format&fit=fill&fill=solid&trim-color=FFFFFF&trim=color&trim-tol=8&w=307&h=480&dpr=2"
+  "https://jiffyimg.imgix.net/77b1ea2074c5d1.jpg?ixlib=rb-0.3.5&auto=format&fit=fill&fill=solid&trim-color=FFFFFF&trim=color&trim-tol=8&w=307&h=400&dpr=2",
+  "https://jiffyimg.imgix.net/269d2746fa9623.jpg?ixlib=rb-0.3.5&auto=format&fit=fill&fill=solid&trim-color=FFFFFF&trim=color&trim-tol=8&w=307&h=400&q=80&dpr=2",
+  "https://jiffyimg.imgix.net/85c0566a0cc35a.jpg?ixlib=rb-0.3.5&auto=format&fit=fill&fill=solid&trim-color=FFFFFF&trim=color&trim-tol=8&w=307&h=400&q=80&dpr=2",
+  "https://jiffy.imgix.net/6679eac1dc8872.jpg?ixlib=rb-0.3.5&auto=format&fit=fill&fill=solid&trim-color=FFFFFF&trim=color&trim-tol=8&w=307&h=400&dpr=2",
+  "https://jiffyimg.imgix.net/ce5eafee37c17c.jpg?ixlib=rb-0.3.5&auto=format&fit=fill&fill=solid&trim-color=FFFFFF&trim=color&trim-tol=8&w=307&h=400&dpr=2"
 ];
 
 let currentShirtIndex = 0;

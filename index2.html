@@ -146,6 +146,31 @@ button.primary {
   justify-content: center;
   display: flex;
 }
+button, select {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 400;
+}
+
+.file-upload input[type="file"] {
+  display: none;
+}
+
+.file-upload {
+  display: inline-block;
+  padding: 8px 16px;
+  background: #222;
+  color: #fff;
+  cursor: pointer;
+  border-radius: 4px;
+  text-transform: lowercase;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
+}
+
+.file-upload:hover {
+  background: #333;
+}
+
 .thumb-strip {
   display: flex;
   gap: 6px;
@@ -194,8 +219,13 @@ button.primary {
   </div>
 
   <div class="panel">
-  <label>upload shirt</label>
-  <input type="file" id="shirtInput" accept="image/*">
+  <label>upload or paste image</label>
+  
+  <label class="file-upload">
+    📂
+    <input type="file" id="shirtInput" accept="image/*">
+  </label>
+
 
   <label>design</label>
   <select id="svgSelect"><option value="" disabled selected>loading…</option></select>
@@ -433,7 +463,7 @@ opacityInput.addEventListener('input', ()=>{ opacityPct.textContent=opacityInput
 scaleInput.addEventListener('input', ()=>{ sizePct=parseInt(scaleInput.value); scalePct.textContent=sizePct+"%"; setOverlayTransform(); });
 rotationInput.addEventListener('input', ()=>{ rotationDeg=parseInt(rotationInput.value); rotDeg.textContent=rotationDeg+"°"; setOverlayTransform(); });
 centerBtn.addEventListener('click', ()=>{ pos.xPct=50; setOverlayTransform(); }); // horizontal only
-fitBtn.addEventListener('click', ()=>{ sizePct=50; pos={xPct:50,yPct:35}; setOverlayTransform(); });
+fitBtn.addEventListener('click', ()=>{ sizePct=40; pos={xPct:50,yPct:35}; setOverlayTransform(); });
 
 // Export
 exportBtn.addEventListener('click', ()=>{

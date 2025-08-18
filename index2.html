@@ -471,12 +471,21 @@ function setupColorPickersFromKeys(svgEl) {
       }
 
       btn.addEventListener('click', () => {
-        applyColorChangeForKey(idx, p.hex);
+        const alreadySelected = btn.textContent.includes('✖');
 
-        // remove checkmark from all buttons in this row
-        Array.from(row.children).forEach(b => b.textContent = '   ');
-        // set checkmark on clicked button
-        btn.textContent = ' ✖';
+        if (alreadySelected) {
+          // Deselect: remove checkmark and reset SVG fill to none
+          btn.textContent = '   ';
+          applyColorChangeForKey(idx, 'none');
+        } else {
+          // Select this color
+          applyColorChangeForKey(idx, p.hex);
+
+          // Remove checkmark from all buttons in this row
+          Array.from(row.children).forEach(b => b.textContent = '   ');
+          // Set checkmark on clicked button
+          btn.textContent = ' ✖';
+        }
       });
 
       row.appendChild(btn);

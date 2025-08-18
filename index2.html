@@ -11,13 +11,14 @@
 body {
   margin: 0;
   background: #ffffff;
-  color: #000000;
+  color: #555;
   font-family: 'Montserrat', sans-serif; /* changed from system-ui */
   font-weight: 700;
+  font-size: 15px;
   text-transform: lowercase;
   display: flex;
   justify-content: center;
-  padding: 10px;
+  padding: 8px;
 }
 .wrap {
   display: flex;
@@ -230,8 +231,8 @@ button, select {
   <label>design</label>
   <select id="svgSelect"><option value="" disabled selected>loading…</option></select>
   <button id="reloadBtn">reload (colors stop working)</button>
-
-  <div id="colorPickers" class="color-picker-row"></div>
+  
+  <div id="colorPickers"></div>
 
   <div class="control-row">
     <label for="scale">size = <span id="scalePct">40%</span></label>
@@ -430,30 +431,64 @@ function instrumentSVGForColorKeys(svgEl) {
   svgEl.__fillKeys = limited;
 }
 
-// ---------- color pickers (max 5) ----------
 function setupColorPickersFromKeys(svgEl) {
   colorPickersDiv.innerHTML = '';
 
   const keys = svgEl.__fillKeys || [];
   if (!keys.length) return;
 
-  // build up to 5 dropdowns (fixed palette per your UI: black/white/red)
   keys.forEach((origColor, idx) => {
-    const sel = document.createElement('select');
-    sel.innerHTML = `
-      <option value="#000000">black</option>
-      <option value="#ffffff">white</option>
-      <option value="#d40000">red</option>
-    `;
-    // choose a starting value = original color if it matches the palette, else default to black
-    const norm = normalizeColor(origColor);
-    const palette = ['#000000','#ffffff','#d40000'];
-    sel.value = palette.includes(norm) ? norm : '#000000';
+    const palette = [
+      { hex: '#000000', label: 'black' },
+      { hex: '#ffffff', label: 'white' },
+      { hex: '#d40000', label: 'red' }
+    ];
 
-    sel.addEventListener('change', () => applyColorChangeForKey(idx, sel.value));
-    colorPickersDiv.appendChild(sel);
+    const row = document.createElement('div');
+    row.style.display = 'flex';
+    row.style.gap = '6px';
+    row.style.padding = '3px';
+
+    palette.forEach(p => {
+      const btn = document.createElement('button');
+      btn.textContent = '   '; // three spaces by default
+      btn.style.background = p.hex;
+      btn.style.border = p.hex === '#d40000' ? '2px solid #fff' : '0';
+      btn.style.width = '80px';
+      btn.style.height = '20px';
+      btn.style.cursor = 'pointer';
+      btn.style.fontSize = '15px';
+      btn.style.display = 'flex';
+      btn.style.alignItems = 'center';
+      btn.style.justifyContent = 'center';
+      btn.style.lineHeight = '1';
+
+      // Set text color based on background
+      if (p.hex === '#ffffff') {
+        btn.style.color = '#000000'; // black text on white
+      } else {
+        btn.style.color = '#ffffff'; // white text on black/red
+      }
+
+      btn.addEventListener('click', () => {
+        applyColorChangeForKey(idx, p.hex);
+
+        // remove checkmark from all buttons in this row
+        Array.from(row.children).forEach(b => b.textContent = '   ');
+        // set checkmark on clicked button
+        btn.textContent = ' ✖';
+      });
+
+      row.appendChild(btn);
+    });
+
+    colorPickersDiv.appendChild(row);
   });
 }
+
+
+
+
 
 // precise recolor: only elements that ORIGINALLY had this key
 function applyColorChangeForKey(keyIndex, newColor) {
@@ -565,28 +600,48 @@ fitBtn.addEventListener('click', ()=>{
 
 
 // ---------- export ----------
-exportBtn.addEventListener('click', ()=>{
-  const canvas=document.createElement('canvas');
-  canvas.width=shirtImg.width;
-  canvas.height=shirtImg.height;
-  const ctx=canvas.getContext('2d');
-  ctx.drawImage(shirtImg,0,0);
-  const svgNode = overlayInner.firstChild;
+exportBtn.addEventListener('click', () => {
+  const canvas = document.createElement('canvas');
+  canvas.width = shirtImg.naturalWidth;
+  canvas.height = shirtImg.naturalHeight;
+  const ctx = canvas.getContext('2d');
+
+  // Draw the shirt first
+  ctx.drawImage(shirtImg, 0, 0, canvas.width, canvas.height);
+
+  // Draw overlay SVG
+  const svgNode = overlayInner.querySelector('svg');
   if (!svgNode) return;
-  const svgData=new XMLSerializer().serializeToString(svgNode);
-  const img=new Image();
-  const svgBlob=new Blob([svgData],{type:"image/svg+xml;charset=utf-8"});
-  const url=URL.createObjectURL(svgBlob);
-  img.onload=()=>{
-    ctx.globalAlpha=overlayBox.style.opacity ? parseFloat(overlayBox.style.opacity) : 1;
-    const ow=overlayBox.offsetWidth, oh=overlayBox.offsetHeight;
-    const ox=(pos.xPct/100)*shirtImg.width-ow/2, oy=(pos.yPct/100)*shirtImg.height-oh/2;
-    ctx.drawImage(img, ox, oy, ow, oh);
-    const link=document.createElement('a'); link.download="shirt_mockup.png"; link.href=canvas.toDataURL(); link.click();
+
+  const svgData = new XMLSerializer().serializeToString(svgNode);
+  const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+  const url = URL.createObjectURL(svgBlob);
+  const img = new Image();
+
+  img.onload = () => {
+    // compute overlay position relative to shirt image dimensions
+    const ow = (sizePct / 100) * canvas.width;
+    const oh = (sizePct / 100) * canvas.height * (overlayBox.offsetHeight / overlayBox.offsetWidth); // preserve aspect ratio
+    const ox = (pos.xPct / 100) * canvas.width - ow / 2;
+    const oy = (pos.yPct / 100) * canvas.height - oh / 2;
+
+    ctx.save();
+    ctx.globalAlpha = overlayBox.style.opacity ? parseFloat(overlayBox.style.opacity) : 1;
+    ctx.translate(ox + ow / 2, oy + oh / 2);
+    ctx.rotate(rotationDeg * Math.PI / 180);
+    ctx.drawImage(img, -ow / 2, -oh / 2, ow, oh);
+    ctx.restore();
+
+    const link = document.createElement('a');
+    link.download = "shirt_mockup.png";
+    link.href = canvas.toDataURL();
+    link.click();
     URL.revokeObjectURL(url);
   };
-  img.src=url;
+
+  img.src = url;
 });
+
 
 /* ---------- carousel logic (small previews + arrows) ---------- */
 const shirtImages = [

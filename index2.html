@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Shirt Designer - Dynamic Multi-Color SVG</title>
+<title>CGbC Shirt Design Tool</title>
 <!-- Load Montserrat from Google Fonts -->
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
 <style>
@@ -96,7 +96,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  max-width: 300px;
+  max-width: 230px;
 }
 label { font-size: 13px; color: #ffffff; }
 input, select, button { font-size: 14px; }
@@ -158,7 +158,7 @@ button, select {
 .file-upload {
   display: inline-block;
   padding: 8px 16px;
-  background: #222;
+  background: #000000;
   color: #fff;
   cursor: pointer;
   border-radius: 4px;
@@ -168,7 +168,7 @@ button, select {
 }
 
 .file-upload:hover {
-  background: #333;
+  background: #222222;
 }
 
 .thumb-strip {
@@ -213,8 +213,8 @@ button, select {
 
     <div class="row">
       <button id="centerBtn">center</button>
-      <button id="fitBtn">fit chest</button>
-      <button class="primary" id="exportBtn" disabled>export</button>
+      <button id="fitBtn">reset</button>
+      <button class="primary" id="exportBtn">download</button>
     </div>
   </div>
 
@@ -234,21 +234,22 @@ button, select {
   <div id="colorPickers" class="color-picker-row"></div>
 
   <div class="control-row">
-    <label for="scale">size - <span id="scalePct">40%</span></label>
+    <label for="scale">size = <span id="scalePct">40%</span></label>
     <input type="range" id="scale" min="10" max="100" value="40">
   </div>
 
   <div class="control-row">
-    <label for="opacity">opacity - <span id="opacityPct">100%</span></label>
+    <label for="opacity">opacity = <span id="opacityPct">100%</span></label>
     <input type="range" id="opacity" min="0" max="100" value="100">
   </div>
 
   <div class="control-row">
-    <label for="rotation">rotation - <span id="rotDeg">0°</span></label>
+    <label for="rotation">rotation = <span id="rotDeg">0°</span></label>
     <input type="range" id="rotation" min="-20" max="20" value="0">
   </div>
 </div>
-
+    
+    <body>Note: not all colorways are recommended due to graphics or shadows that appear unrealistic</body>
     
 </div>
 
@@ -278,9 +279,43 @@ const prevShirtBtn = document.getElementById('prevShirt');
 const nextShirtBtn = document.getElementById('nextShirt');
 const thumbStrip = document.getElementById('thumbStrip');
 
-let sizePct=40, rotationDeg=0, pos={xPct:50,yPct:50}, isDragging=false, isResizing=false, dragStart={}, boxStart={}, currentSVGEl=null, svgText="", fillColors=[];
+let sizePct=40, rotationDeg=0, pos={xPct:50,yPct:32}, isDragging=false, isResizing=false, dragStart={}, boxStart={}, currentSVGEl=null, svgText="";
 
-// Populate SVG select
+// ---------- helpers: color normalization ----------
+function expandHex(hex) {
+  // "#abc" -> "#aabbcc"
+  return '#' + hex[1] + hex[1] + hex[2] + hex[2] + hex[3] + hex[3];
+}
+
+function rgbToHex(r,g,b){
+  const toHex = v => ('0' + Math.max(0, Math.min(255, v|0)).toString(16)).slice(-2);
+  return '#' + toHex(r) + toHex(g) + toHex(b);
+}
+
+function normalizeColor(c) {
+  if (!c) return null;
+  let s = String(c).trim().toLowerCase();
+
+  // named colors (we only need a couple here)
+  if (s === 'white') return '#ffffff';
+  if (s === 'black') return '#000000';
+  if (s === 'red')   return '#d40000';
+
+  // hex
+  if (/^#([0-9a-f]{3})$/i.test(s)) return expandHex(s);
+  if (/^#([0-9a-f]{6})$/i.test(s)) return s;
+
+  // rgb or rgba
+  const m = s.match(/^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)(?:\s*,\s*[\d.]+\s*)?\)$/i);
+  if (m) return rgbToHex(+m[1], +m[2], +m[3]);
+
+  // anything else we can't safely normalize (gradients/urls/none)
+  if (s === 'none' || s.startsWith('url(')) return null;
+
+  return s; // last resort: return as-is (still used consistently during matching)
+}
+
+// ---------- populate SVG list ----------
 async function loadSVGList() {
   svgSelect.innerHTML = '<option value="" disabled selected>select a design…</option>';
   const resp = await fetch(GITHUB_FOLDER_API);
@@ -296,7 +331,7 @@ async function loadSVGList() {
 }
 loadSVGList();
 
-// Shirt loaders
+// ---------- shirt loaders ----------
 shirtInput.addEventListener('change', e=>{ if(e.target.files[0]) loadShirt(URL.createObjectURL(e.target.files[0])); });
 stage.addEventListener('dragover', e=>e.preventDefault());
 stage.addEventListener('drop', e=>{ e.preventDefault(); if(e.dataTransfer.files.length) loadShirt(URL.createObjectURL(e.dataTransfer.files[0])); });
@@ -320,104 +355,150 @@ function loadShirt(src){
   };
 }
 
-// Load SVG
+// ---------- load + instrument SVG ----------
 svgSelect.addEventListener('change', ()=>loadSVG(svgSelect.value));
-
-// Reload current design (from selector)
-reloadBtn.addEventListener('click', ()=>{
-  const url = svgSelect.value;
-  if (url) loadSVG(url);
-});
+reloadBtn.addEventListener('click', ()=>{ const url = svgSelect.value; if (url) loadSVG(url); });
 
 async function loadSVG(url){
   if(!url) return;
   svgText = await (await fetch(url)).text();
+
+  // strip embedded <style> to avoid specificity surprises
   svgText = svgText.replace(/<style[\s\S]*?<\/style>/gi,"");
+
   overlayInner.innerHTML = svgText;
   currentSVGEl = overlayInner.querySelector('svg');
   if(!currentSVGEl) return;
-  setupColorPickers();
+
+  // Tag each element with a stable data-fill-key based on ORIGINAL fill (attr or style)
+  instrumentSVGForColorKeys(currentSVGEl);
+
+  // Build color pickers from discovered unique fills (up to 5)
+  setupColorPickersFromKeys(currentSVGEl);
+
   overlayBox.hidden=false;
   overlayBox.style.border='1px dashed #7aa2ff';
   handle.style.display='block';
   setOverlayTransform();
 }
 
-let pickerMap = []; // { lastColor: '#xxxxxx', input: HTMLSelectElement }
+function getElementOriginalFill(el) {
+  // prefer inline style fill if present; else fill attribute
+  const style = el.getAttribute('style') || '';
+  const styleMatch = style.match(/(^|;)\s*fill\s*:\s*([^;]+)/i);
+  if (styleMatch) return normalizeColor(styleMatch[2]);
 
-function setupColorPickers() {
-  if (!svgText) return;
+  const attrFill = el.getAttribute('fill');
+  if (attrFill) return normalizeColor(attrFill);
 
-  const parser = new DOMParser();
-  const svgDoc = parser.parseFromString(svgText, "image/svg+xml");
-  const svgEl = svgDoc.querySelector('svg');
-  if (!svgEl) return;
+  return null;
+}
 
-  const fillsSet = new Set();
+function instrumentSVGForColorKeys(svgEl) {
+  // collect unique normalized fills (skip none/gradients)
+  const fills = [];
+  const seen = new Set();
 
-  // Collect fills from 'fill' attributes
-  [...svgEl.querySelectorAll('[fill]')].forEach(el => {
-    const f = el.getAttribute('fill');
-    if (f && f !== 'none' && !f.startsWith('url(')) fillsSet.add(f);
-  });
-
-  // Collect fills from inline style attributes
-  [...svgEl.querySelectorAll('[style]')].forEach(el => {
-    const match = el.getAttribute('style').match(/fill\s*:\s*([^;]+)/i);
-    if (match) {
-      const f = match[1].trim();
-      if (f && f !== 'none' && !f.startsWith('url(')) fillsSet.add(f);
+  const nodes = svgEl.querySelectorAll('*');
+  nodes.forEach(el => {
+    const f = getElementOriginalFill(el);
+    if (!f) return;
+    if (!seen.has(f)) {
+      seen.add(f);
+      fills.push(f);
     }
   });
 
-  colorPickersDiv.innerHTML = '';
-  pickerMap = [];
+  // cap at 5 keys
+  const limited = fills.slice(0, 5);
 
-  Array.from(fillsSet).forEach(color => {
-    const input = document.createElement('select'); // limited palette
-    input.innerHTML = `
+  // assign key indices to elements based on ORIGINAL fill (stable even after recolor)
+  nodes.forEach(el => {
+    const f = getElementOriginalFill(el);
+    if (!f) return;
+    const keyIndex = limited.indexOf(f);
+    if (keyIndex !== -1) {
+      el.setAttribute('data-fill-key', String(keyIndex));
+      // remember whether it had style-based fill initially (so we update the right place later)
+      const style = el.getAttribute('style') || '';
+      const styleHasFill = /(^|;)\s*fill\s*:\s*[^;]+/i.test(style);
+      el.setAttribute('data-fill-source', styleHasFill ? 'style' : 'attr');
+    }
+  });
+
+  // store keys list on the svg for later
+  svgEl.__fillKeys = limited;
+}
+
+// ---------- color pickers (max 5) ----------
+function setupColorPickersFromKeys(svgEl) {
+  colorPickersDiv.innerHTML = '';
+
+  const keys = svgEl.__fillKeys || [];
+  if (!keys.length) return;
+
+  // build up to 5 dropdowns (fixed palette per your UI: black/white/red)
+  keys.forEach((origColor, idx) => {
+    const sel = document.createElement('select');
+    sel.innerHTML = `
       <option value="#000000">black</option>
       <option value="#ffffff">white</option>
       <option value="#d40000">red</option>
     `;
-    input.value = color.toLowerCase() || "#000000";
-    pickerMap.push({ lastColor: color, input });
-    input.addEventListener('change', () => {
-      applyColorChange(pickerMap.find(p => p.input === input), input.value);
-    });
-    colorPickersDiv.appendChild(input);
-  });
+    // choose a starting value = original color if it matches the palette, else default to black
+    const norm = normalizeColor(origColor);
+    const palette = ['#000000','#ffffff','#d40000'];
+    sel.value = palette.includes(norm) ? norm : '#000000';
 
-  overlayInner.innerHTML = new XMLSerializer().serializeToString(svgEl);
-  currentSVGEl = overlayInner.querySelector('svg');
+    sel.addEventListener('change', () => applyColorChangeForKey(idx, sel.value));
+    colorPickersDiv.appendChild(sel);
+  });
 }
 
-function applyColorChange(picker, newColor) {
+// precise recolor: only elements that ORIGINALLY had this key
+function applyColorChangeForKey(keyIndex, newColor) {
   if (!currentSVGEl) return;
 
-  [...currentSVGEl.querySelectorAll('[fill]')].forEach(el => {
-    if (el.getAttribute('fill')?.toLowerCase() === picker.lastColor.toLowerCase()) {
+  const targets = currentSVGEl.querySelectorAll(`[data-fill-key="${keyIndex}"]`);
+  targets.forEach(el => {
+    const source = el.getAttribute('data-fill-source') || 'attr';
+    if (source === 'style') {
+      // update only the style's fill property
+      const style = el.getAttribute('style') || '';
+      let updated = '';
+      let seenFill = false;
+      style.split(';').forEach(chunk => {
+        const [propRaw, valRaw] = chunk.split(':');
+        if (!propRaw) return;
+        const prop = propRaw.trim().toLowerCase();
+        const val = (valRaw || '').trim();
+        if (prop === 'fill') {
+          updated += (updated ? ';' : '') + `fill:${newColor}`;
+          seenFill = true;
+        } else if (prop) {
+          updated += (updated ? ';' : '') + `${prop}:${val}`;
+        }
+      });
+      if (!seenFill) {
+        updated += (updated ? ';' : '') + `fill:${newColor}`;
+      }
+      el.setAttribute('style', updated);
+      // also clear conflicting presentation attribute if present
+      if (el.hasAttribute('fill')) el.setAttribute('fill', newColor);
+    } else {
+      // attribute-based fill
       el.setAttribute('fill', newColor);
+      // if style also had fill somehow, keep them consistent
+      const style = el.getAttribute('style') || '';
+      if (/(^|;)\s*fill\s*:\s*[^;]+/i.test(style)) {
+        const updated = style.replace(/(^|;)\s*fill\s*:\s*[^;]+/i, m => m.replace(/:\s*[^;]+/i, `:${newColor}`));
+        el.setAttribute('style', updated);
+      }
     }
   });
-
-  [...currentSVGEl.querySelectorAll('[style]')].forEach(el => {
-    const styleObj = {};
-    el.getAttribute('style').split(';').forEach(s => {
-      const [prop, val] = s.split(':').map(x => x.trim());
-      if (prop) styleObj[prop] = val;
-    });
-    if (styleObj['fill']?.toLowerCase() === picker.lastColor.toLowerCase()) {
-      styleObj['fill'] = newColor;
-      const newStyle = Object.entries(styleObj).map(([k,v]) => `${k}:${v}`).join(';');
-      el.setAttribute('style', newStyle);
-    }
-  });
-
-  picker.lastColor = newColor;
 }
 
-// Overlay transform
+// ---------- overlay transform ----------
 overlayBox.addEventListener('mousedown', e=>{
   if(e.target===handle) isResizing=true; else isDragging=true;
   dragStart={x:e.clientX, y:e.clientY};
@@ -458,30 +539,51 @@ document.addEventListener('click', e=>{
   }
 });
 
-// UI events
+// ---------- UI events ----------
 opacityInput.addEventListener('input', ()=>{ opacityPct.textContent=opacityInput.value+"%"; overlayBox.style.opacity=opacityInput.value/100; });
 scaleInput.addEventListener('input', ()=>{ sizePct=parseInt(scaleInput.value); scalePct.textContent=sizePct+"%"; setOverlayTransform(); });
 rotationInput.addEventListener('input', ()=>{ rotationDeg=parseInt(rotationInput.value); rotDeg.textContent=rotationDeg+"°"; setOverlayTransform(); });
 centerBtn.addEventListener('click', ()=>{ pos.xPct=50; setOverlayTransform(); }); // horizontal only
-fitBtn.addEventListener('click', ()=>{ sizePct=40; pos={xPct:50,yPct:35}; setOverlayTransform(); });
+fitBtn.addEventListener('click', ()=>{ 
+  // reset values
+  overlayBox.style.opacity = 1;   // opacity must be 0–1 for CSS
+  rotationDeg = 0; 
+  sizePct = 40; 
+  pos = { xPct: 50, yPct: 32 }; 
+  setOverlayTransform();
 
-// Export
+  // reset sliders
+  document.getElementById("scale").value = 40;
+  document.getElementById("scalePct").textContent = "40%";
+
+  document.getElementById("opacity").value = 100;
+  document.getElementById("opacityPct").textContent = "100%";
+
+  document.getElementById("rotation").value = 0;
+  document.getElementById("rotDeg").textContent = "0°";
+});
+
+
+// ---------- export ----------
 exportBtn.addEventListener('click', ()=>{
   const canvas=document.createElement('canvas');
   canvas.width=shirtImg.width;
   canvas.height=shirtImg.height;
   const ctx=canvas.getContext('2d');
   ctx.drawImage(shirtImg,0,0);
-  const svgData=new XMLSerializer().serializeToString(overlayInner.firstChild);
+  const svgNode = overlayInner.firstChild;
+  if (!svgNode) return;
+  const svgData=new XMLSerializer().serializeToString(svgNode);
   const img=new Image();
   const svgBlob=new Blob([svgData],{type:"image/svg+xml;charset=utf-8"});
   const url=URL.createObjectURL(svgBlob);
   img.onload=()=>{
-    ctx.globalAlpha=overlayBox.style.opacity || 1;
+    ctx.globalAlpha=overlayBox.style.opacity ? parseFloat(overlayBox.style.opacity) : 1;
     const ow=overlayBox.offsetWidth, oh=overlayBox.offsetHeight;
     const ox=(pos.xPct/100)*shirtImg.width-ow/2, oy=(pos.yPct/100)*shirtImg.height-oh/2;
     ctx.drawImage(img, ox, oy, ow, oh);
     const link=document.createElement('a'); link.download="shirt_mockup.png"; link.href=canvas.toDataURL(); link.click();
+    URL.revokeObjectURL(url);
   };
   img.src=url;
 });
@@ -529,5 +631,6 @@ nextShirtBtn.addEventListener('click', ()=>{
 renderThumbs();
 /* -------------------------------------------------------------- */
 </script>
+
 </body>
 </html>

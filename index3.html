@@ -98,6 +98,7 @@ body {
   flex-direction: column;
   gap: 12px;
   max-width: 230px;
+  height: auto; /* allow panel to shrink/grow as needed */
 }
 label { font-size: 13px; color: #ffffff; }
 input, select, button { font-size: 14px; }
@@ -220,7 +221,7 @@ button, select {
   </div>
 
   <div class="panel">
-  <label>upload or paste image</label>
+  <label>upload/paste custom shirt image</label>
   
   <label class="file-upload">
     📂
@@ -228,7 +229,7 @@ button, select {
   </label>
 
 
-  <label>design</label>
+  <label style="font-size:18px;">select your design</label>
   <select id="svgSelect"><option value="" disabled selected>loading…</option></select>
   <button id="reloadBtn">default colors</button>
   
@@ -654,17 +655,18 @@ exportBtn.addEventListener('click', async () => {
   const svgNode = overlayInner.querySelector('svg');
   if (!svgNode) return;
 
-  // Serialize the SVG and add inline styles
+  // Clone SVG and serialize
   const svgClone = svgNode.cloneNode(true);
-  // optional: add inline styles for all fills/colors if needed
   const svgData = new XMLSerializer().serializeToString(svgClone);
-
-  // Make a data URL to avoid CORS
   const img = new Image();
+
+  // Use base64 Data URL to avoid CORS issues
+  img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+
   img.onload = () => {
     // overlay size and position
     const ow = (sizePct / 100) * canvas.width;
-    const oh = (sizePct / 100) * canvas.height * (overlayBox.offsetHeight / overlayBox.offsetWidth);
+    const oh = ow * (overlayBox.offsetHeight / overlayBox.offsetWidth);
     const ox = (pos.xPct / 100) * canvas.width - ow / 2;
     const oy = (pos.yPct / 100) * canvas.height - oh / 2;
 
@@ -675,13 +677,12 @@ exportBtn.addEventListener('click', async () => {
     ctx.drawImage(img, -ow / 2, -oh / 2, ow, oh);
     ctx.restore();
 
-    // download
+    // trigger download
     const link = document.createElement('a');
     link.href = canvas.toDataURL('image/png');
     link.download = 'shirt_mockup.png';
     link.click();
   };
-  img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
 });
 
 /* ---------- carousel logic (small previews + arrows) ---------- */

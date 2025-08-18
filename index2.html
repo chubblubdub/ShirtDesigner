@@ -320,18 +320,28 @@ function normalizeColor(c) {
   return s; // last resort: return as-is (still used consistently during matching)
 }
 
-// ---------- populate SVG list ----------
 async function loadSVGList() {
   svgSelect.innerHTML = '<option value="" disabled selected>select a design…</option>';
   const resp = await fetch(GITHUB_FOLDER_API);
   const files = await resp.json();
-  files.forEach(file => {
-    if(file.name.endsWith('.svg')){
-      const opt = document.createElement('option');
-      opt.value = file.download_url;
-      opt.textContent = file.name.replace('.svg','');
-      svgSelect.appendChild(opt);
-    }
+
+  // Filter only SVGs
+  const svgFiles = files.filter(file => file.name.endsWith('.svg'));
+
+  // Sort by numeric value in filename (assumes filename contains a number)
+  svgFiles.sort((a, b) => {
+    const getNumber = name => {
+      const m = name.match(/\d+/); // extract first number
+      return m ? parseInt(m[0], 10) : Infinity;
+    };
+    return getNumber(a.name) - getNumber(b.name);
+  });
+
+  svgFiles.forEach(file => {
+    const opt = document.createElement('option');
+    opt.value = file.download_url;
+    opt.textContent = file.name.replace('.svg','');
+    svgSelect.appendChild(opt);
   });
 }
 loadSVGList();

@@ -250,7 +250,7 @@ button, select {
   </div>
   <div class="control-row" style="flex-direction: column; gap: 6px;">
   <label for="designCode">design code</label>
-  <input type="text" id="designCode" placeholder="no design selected" style="width:100%; padding:6px; border-radius:8px; border:1px solid #1b2033; background:#000; color:#fff;">
+  <input type="text" id="designCode" placeholder="no design selected" style="width:94%; padding:6px; border-radius:8px; border:1px solid #1b2033; background:#000; color:#fff;">
   <div class="row" style="justify-content:space-between; gap:6px; padding-top:6px; width:100%;">
   <button id="applyCodeBtn" style="flex:1; background:#ffffff; color:#d40000; padding:4px 0; font-size:13px; border-radius:6px; border:1px solid #d40000;">apply code</button>
   <button id="copyCodeBtn" style="flex:1; background:#ffffff; color:#d40000; padding:4px 0; font-size:13px; border-radius:6px; border:1px solid #d40000;">copy</button>
@@ -658,9 +658,7 @@ fitBtn.addEventListener('click', ()=>{
   document.getElementById("rotDeg").textContent = "0°";
 });
 
-
-// ---------- export ----------
-exportBtn.addEventListener('click', () => {
+exportBtn.addEventListener('click', async () => {
   if (!shirtImg.naturalWidth || !shirtImg.naturalHeight) return;
 
   const canvas = document.createElement('canvas');
@@ -671,41 +669,30 @@ exportBtn.addEventListener('click', () => {
   // Draw the shirt first
   ctx.drawImage(shirtImg, 0, 0, canvas.width, canvas.height);
 
+  // Grab the SVG as a blob and convert to Image
   const svgNode = overlayInner.querySelector('svg');
   if (!svgNode) return;
 
-  const svgClone = svgNode.cloneNode(true);
-  const svgData = new XMLSerializer().serializeToString(svgClone);
+  const svgData = new XMLSerializer().serializeToString(svgNode);
+  const blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+
   const img = new Image();
-
   img.onload = () => {
-    const ow = (sizePct / 100) * canvas.width;
-    const oh = ow * (overlayBox.offsetHeight / overlayBox.offsetWidth || 1);
-    const ox = (pos.xPct / 100) * canvas.width - ow / 2;
-    const oy = (pos.yPct / 100) * canvas.height - oh / 2;
+    // Draw SVG exactly over canvas
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-    ctx.save();
-    ctx.globalAlpha = parseFloat(overlayBox.style.opacity || 1);
-    ctx.translate(ox + ow / 2, oy + oh / 2);
-    ctx.rotate((rotationDeg || 0) * Math.PI / 180);
-    ctx.drawImage(img, -ow / 2, -oh / 2, ow, oh);
-    ctx.restore();
-
-    // create temporary link and trigger download
+    // Trigger download
     const link = document.createElement('a');
     link.download = 'shirt_mockup.png';
     link.href = canvas.toDataURL('image/png');
-
-    // Append to DOM to make sure click works in all browsers
-    document.body.appendChild(link);
     link.click();
-    document.body.removeChild(link);
+
+    URL.revokeObjectURL(url); // cleanup
   };
 
-  // assign src after onload
-  img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+  img.src = url;
 });
-
 
 /* ---------- carousel logic (small previews + arrows) ---------- */
 const shirtImages = [

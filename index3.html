@@ -295,6 +295,9 @@ const prevShirtBtn = document.getElementById('prevShirt');
 const nextShirtBtn = document.getElementById('nextShirt');
 const thumbStrip = document.getElementById('thumbStrip');
 
+// global saved codes for each SVG index
+const savedDesignCodes = {}; // { svgIndex: codeString }
+
 let sizePct=40, rotationDeg=0, pos={xPct:50,yPct:32}, isDragging=false, isResizing=false, dragStart={}, boxStart={}, currentSVGEl=null, svgText="";
 
 // ---------- helpers: color normalization ----------
@@ -398,29 +401,32 @@ img.onload=()=>{
 svgSelect.addEventListener('change', ()=>loadSVG(svgSelect.value));
 reloadBtn.addEventListener('click', ()=>{ const url = svgSelect.value; if (url) loadSVG(url); });
 
+// When loading a new SVG, apply saved code if it exists
 async function loadSVG(url){
   if(!url) return;
   svgText = await (await fetch(url)).text();
-
-  // strip embedded <style> to avoid specificity surprises
   svgText = svgText.replace(/<style[\s\S]*?<\/style>/gi,"");
 
   overlayInner.innerHTML = svgText;
   currentSVGEl = overlayInner.querySelector('svg');
   if(!currentSVGEl) return;
 
-  // Tag each element with a stable data-fill-key based on ORIGINAL fill (attr or style)
   instrumentSVGForColorKeys(currentSVGEl);
-
-  // Build color pickers from discovered unique fills (up to 5)
   setupColorPickersFromKeys(currentSVGEl);
 
   overlayBox.hidden=false;
   overlayBox.style.border='1px dashed #7aa2ff';
   handle.style.display='block';
   setOverlayTransform();
-  
-  designCodeInput.value = generateDesignCode();
+
+  // Apply saved code if exists
+  const svgIndex = Array.from(svgSelect.options).findIndex(opt => opt.value === url);
+  if(savedDesignCodes[svgIndex]){
+    applyDesignCode(savedDesignCodes[svgIndex]);
+    designCodeInput.value = savedDesignCodes[svgIndex];
+  } else {
+    designCodeInput.value = generateDesignCode(); // default
+  }
 }
 
 function getElementOriginalFill(el) {
@@ -747,7 +753,7 @@ const designCodeInput = document.getElementById('designCode');
 const applyCodeBtn = document.getElementById('applyCodeBtn');
 const copyCodeBtn = document.getElementById('copyCodeBtn');
 
-// update generateDesignCode to respect 'none' from button dataset
+// Modified generateDesignCode to store in savedDesignCodes
 function generateDesignCode() {
   if (!currentSVGEl || !svgSelect.value) return '';
 
@@ -779,14 +785,19 @@ function generateDesignCode() {
       if (btnToCheck) btnToCheck.textContent = ' ✖';
     }
 
-    // apply color to SVG
+    // apply the color to the SVG
     applyColorChangeForKey(idx, newColor);
-
-    code += letter;
   });
 
-  // apply the code again for safety (handles SVG index changes)
-  applyDesignCode(code);
+  code += keys.map((_, idx) => {
+    const row = colorPickersDiv.children[idx];
+    const selected = row ? Array.from(row.children).find(btn => btn.textContent.includes('✖')) : null;
+    if (!selected) return 'd';
+    return selected.dataset.colorValue === 'none' ? 'd' : closestColor(selected.dataset.colorValue);
+  }).join('');
+
+  // store in mapping
+  savedDesignCodes[svgIndex] = code;
 
   return code;
 }
@@ -874,7 +885,13 @@ function applyDesignCode(code) {
 }
 
 designCodeInput.addEventListener('input', ()=>{}); // keep editable
-applyCodeBtn.addEventListener('click', ()=>applyDesignCode(designCodeInput.value));
+// Also update mapping when manually applying a code
+applyCodeBtn.addEventListener('click', ()=>{
+  applyDesignCode(designCodeInput.value);
+
+  const svgIndex = Array.from(svgSelect.options).findIndex(opt => opt.value === svgSelect.value);
+  if(svgIndex >= 0) savedDesignCodes[svgIndex] = designCodeInput.value;
+});
 copyCodeBtn.addEventListener('click', ()=>{
   designCodeInput.select();
   document.execCommand('copy');

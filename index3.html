@@ -672,13 +672,11 @@ exportBtn.addEventListener('click', () => {
   const svgNode = overlayInner.querySelector('svg');
   if (!svgNode) return;
 
-  // Clone and serialize SVG
   const svgClone = svgNode.cloneNode(true);
   const svgData = new XMLSerializer().serializeToString(svgClone);
 
   const img = new Image();
   img.onload = () => {
-    // Compute overlay position & size
     const ow = (sizePct / 100) * canvas.width;
     const oh = ow * (overlayBox.offsetHeight / overlayBox.offsetWidth || 1);
     const ox = (pos.xPct / 100) * canvas.width - ow / 2;
@@ -691,15 +689,17 @@ exportBtn.addEventListener('click', () => {
     ctx.drawImage(img, -ow / 2, -oh / 2, ow, oh);
     ctx.restore();
 
-    // Force download
-    const link = document.createElement('a');
-    link.download = 'shirt_mockup.png';
-    link.href = canvas.toDataURL('image/png');
-    
-    // Some browsers require the link to be in the DOM
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Convert canvas to Blob and trigger download
+    canvas.toBlob((blob) => {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'shirt_mockup.png';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url); // free memory
+    }, 'image/png');
   };
 
   img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));

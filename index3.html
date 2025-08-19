@@ -744,22 +744,37 @@ function generateDesignCode() {
   keys.forEach((origColor, idx) => {
     const row = colorPickersDiv.children[idx];
     let letter = 'd'; // default no-fill
+    let newColor = 'none';
 
-    if(row) {
-      const selected = Array.from(row.children).find(btn=>btn.textContent.includes('✖'));
-      if(selected) {
+    if (row) {
+      const selected = Array.from(row.children).find(btn => btn.textContent.includes('✖'));
+      if (selected) {
         letter = (selected.dataset.colorValue === 'none') ? 'd' : closestColor(selected.dataset.colorValue);
       } else {
         const orig = normalizeColor(origColor);
         letter = (orig === null) ? 'd' : closestColor(orig);
       }
+
+      newColor = canonicalColors[letter] || 'none';
+
+      // update the buttons
+      Array.from(row.children).forEach(btn => btn.textContent = '   ');
+      const btnToCheck = Array.from(row.children).find(b => b.dataset.colorValue === newColor);
+      if (btnToCheck) btnToCheck.textContent = ' ✖';
     }
+
+    // apply color to SVG
+    applyColorChangeForKey(idx, newColor);
 
     code += letter;
   });
 
+  // apply the code again for safety (handles SVG index changes)
+  applyDesignCode(code);
+
   return code;
 }
+
 
 function colorDistance(hex1, hex2) {
   function hexToRgb(h) {
@@ -792,50 +807,32 @@ function closestColor(hex) {
   return best;
 }
 
-// generateDesignCode now reads dataset.colorValue correctly
-function generateDesignCode() {
-  if (!currentSVGEl || !svgSelect.value) return '';
-
-  const svgIndex = Array.from(svgSelect.options).findIndex(opt => opt.value === svgSelect.value);
-  if (svgIndex < 0) return '';
-
-  const keys = currentSVGEl.__fillKeys || [];
-  let code = String(svgIndex);
-
-  keys.forEach((origColor, idx) => {
-    const row = colorPickersDiv.children[idx];
-    let letter = 'd'; // default no-fill
-
-    if(row) {
-      const selected = Array.from(row.children).find(btn=>btn.textContent.includes('✖'));
-      if(selected) {
-        letter = (selected.dataset.colorValue === 'none') ? 'd' : closestColor(selected.dataset.colorValue);
-      } else {
-        const orig = normalizeColor(origColor);
-        letter = (orig === null) ? 'd' : closestColor(orig);
-      }
-    }
-
-    code += letter;
-  });
-
-  return code;
-}
-
 function applyDesignCode(code) {
   if (!code) return;
 
-  // First char is SVG index
-  const svgIdx = parseInt(code[0]);
+  // determine svgIdx and where to slice the code
+  let svgIdx;
+  let slicePos = 1;
+
+  if (!isNaN(code[0]) && !isNaN(code[1])) {
+    // two-digit number
+    svgIdx = parseInt(code[0] + code[1]);
+    slicePos = 2;
+  } else {
+    // single digit
+    svgIdx = parseInt(code[0]);
+  }
+
   if (!isNaN(svgIdx) && svgSelect.selectedIndex !== svgIdx) {
-    // change to the correct SVG
     svgSelect.selectedIndex = svgIdx;
     const url = svgSelect.value;
-    if (url) loadSVG(url).then(() => applyDesignCode(code)); // re-run after SVG loads
+    if (url) {
+      loadSVG(url).then(() => applyDesignCode(code));
+    }
     return;
   }
 
-  const letters = code.slice(1).split('');
+  const letters = code.slice(slicePos).split('');
   const keys = currentSVGEl.__fillKeys || [];
 
   keys.forEach((origColor, idx) => {
@@ -859,7 +856,6 @@ function applyDesignCode(code) {
     applyColorChangeForKey(idx, newColor);
   });
 }
-
 
 designCodeInput.addEventListener('input', ()=>{}); // keep editable
 applyCodeBtn.addEventListener('click', ()=>applyDesignCode(designCodeInput.value));

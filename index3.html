@@ -295,10 +295,25 @@ const prevShirtBtn = document.getElementById('prevShirt');
 const nextShirtBtn = document.getElementById('nextShirt');
 const thumbStrip = document.getElementById('thumbStrip');
 
+const container = stage; // instead of overlayContainer
+
 // global saved codes for each SVG index
 const savedDesignCodes = {}; // { svgIndex: codeString }
 
-let sizePct=40, rotationDeg=0, pos={xPct:50,yPct:32}, isDragging=false, isResizing=false, dragStart={}, boxStart={}, currentSVGEl=null, svgText="";
+function calcYPct(topPct) {
+    const containerHeight = container.offsetHeight;
+    const overlayHeight = overlayBox.offsetHeight;
+    return topPct + (overlayHeight / containerHeight) * 50;
+}
+
+let sizePct = 40,
+    rotationDeg = 0,
+    isDragging = false,
+    isResizing = false,
+    dragStart = {},
+    boxStart = {},
+    currentSVGEl = null,
+    svgText = "";
 
 // ---------- helpers: color normalization ----------
 function expandHex(hex) {
@@ -356,6 +371,9 @@ async function loadSVGList() {
     opt.value = file.download_url;
     opt.textContent = file.name.replace('.svg','');
     svgSelect.appendChild(opt);
+    
+    pos = { xPct: 50, yPct: calcYPct(25) };
+    
   });
 }
 loadSVGList();
@@ -393,7 +411,6 @@ img.onload=()=>{
   shirtImg.height = h;
   stage.style.width=w+"px";
   stage.style.height=h+"px";
-  exportBtn.disabled=false;
 };
 }
 
@@ -401,8 +418,7 @@ img.onload=()=>{
 svgSelect.addEventListener('change', ()=>loadSVG(svgSelect.value));
 reloadBtn.addEventListener('click', ()=>{ const url = svgSelect.value; if (url) loadSVG(url); });
 
-// When loading a new SVG, apply saved code if it exists
-async function loadSVG(url){
+async function loadSVG(url) {
   if(!url) return;
   svgText = await (await fetch(url)).text();
   svgText = svgText.replace(/<style[\s\S]*?<\/style>/gi,"");
@@ -411,13 +427,15 @@ async function loadSVG(url){
   currentSVGEl = overlayInner.querySelector('svg');
   if(!currentSVGEl) return;
 
+  // RESET overlay to defaults
+  resetOverlayDefaults();
+
   instrumentSVGForColorKeys(currentSVGEl);
   setupColorPickersFromKeys(currentSVGEl);
 
   overlayBox.hidden=false;
   overlayBox.style.border='1px dashed #7aa2ff';
   handle.style.display='block';
-  setOverlayTransform();
 
   // Apply saved code if exists
   const svgIndex = Array.from(svgSelect.options).findIndex(opt => opt.value === url);
@@ -427,6 +445,9 @@ async function loadSVG(url){
   } else {
     designCodeInput.value = generateDesignCode(); // default
   }
+  
+  resetOverlayDefaults();
+
 }
 
 function getElementOriginalFill(el) {
@@ -638,24 +659,24 @@ opacityInput.addEventListener('input', ()=>{ opacityPct.textContent=opacityInput
 scaleInput.addEventListener('input', ()=>{ sizePct=parseInt(scaleInput.value); scalePct.textContent=sizePct+"%"; setOverlayTransform(); });
 rotationInput.addEventListener('input', ()=>{ rotationDeg=parseInt(rotationInput.value); rotDeg.textContent=rotationDeg+"°"; setOverlayTransform(); });
 centerBtn.addEventListener('click', ()=>{ pos.xPct=50; setOverlayTransform(); }); // horizontal only
-fitBtn.addEventListener('click', ()=>{ 
-  // reset values
-  overlayBox.style.opacity = 1;   // opacity must be 0–1 for CSS
-  rotationDeg = 0; 
-  sizePct = 40;
- 
-  pos = { xPct: 50, yPct: 32 }; 
-  setOverlayTransform();
 
-  // reset sliders
-  document.getElementById("scale").value = 40;
-  document.getElementById("scalePct").textContent = "40%";
+// reset button uses the same calculation
+fitBtn.addEventListener('click', () => { 
+    overlayBox.style.opacity = 1;
+    rotationDeg = 0;
+    sizePct = 40;
 
-  document.getElementById("opacity").value = 100;
-  document.getElementById("opacityPct").textContent = "100%";
+    pos = { xPct: 50, yPct: calcYPct(25) }; 
+    setOverlayTransform();
 
-  document.getElementById("rotation").value = 0;
-  document.getElementById("rotDeg").textContent = "0°";
+    document.getElementById("scale").value = 40;
+    document.getElementById("scalePct").textContent = "40%";
+
+    document.getElementById("opacity").value = 100;
+    document.getElementById("opacityPct").textContent = "100%";
+
+    document.getElementById("rotation").value = 0;
+    document.getElementById("rotDeg").textContent = "0°";
 });
 
 exportBtn.addEventListener('click', () => {
@@ -728,6 +749,20 @@ function renderThumbs() {
     });
     thumbStrip.appendChild(t);
   });
+}
+
+function resetOverlayDefaults() {
+  sizePct = 40;
+  rotationDeg = 0;
+  pos = { xPct: 50, yPct: calcYPct(25) };
+  overlayBox.style.opacity = 1;
+  scaleInput.value = sizePct;
+  scalePct.textContent = sizePct + "%";
+  rotationInput.value = rotationDeg;
+  rotDeg.textContent = rotationDeg + "°";
+  opacityInput.value = 100;
+  opacityPct.textContent = "100%";
+  setOverlayTransform();
 }
 
 function updateShirtFromCarousel() {

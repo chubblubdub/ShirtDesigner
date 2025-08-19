@@ -658,7 +658,7 @@ fitBtn.addEventListener('click', ()=>{
   document.getElementById("rotDeg").textContent = "0°";
 });
 
-exportBtn.addEventListener('click', async () => {
+exportBtn.addEventListener('click', () => {
   if (!shirtImg.naturalWidth || !shirtImg.naturalHeight) return;
 
   const canvas = document.createElement('canvas');
@@ -669,29 +669,40 @@ exportBtn.addEventListener('click', async () => {
   // Draw the shirt first
   ctx.drawImage(shirtImg, 0, 0, canvas.width, canvas.height);
 
-  // Grab the SVG as a blob and convert to Image
   const svgNode = overlayInner.querySelector('svg');
   if (!svgNode) return;
 
-  const svgData = new XMLSerializer().serializeToString(svgNode);
-  const blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
+  // Clone and serialize SVG
+  const svgClone = svgNode.cloneNode(true);
+  const svgData = new XMLSerializer().serializeToString(svgClone);
 
   const img = new Image();
   img.onload = () => {
-    // Draw SVG exactly over canvas
-    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    // Compute overlay position & size
+    const ow = (sizePct / 100) * canvas.width;
+    const oh = ow * (overlayBox.offsetHeight / overlayBox.offsetWidth || 1);
+    const ox = (pos.xPct / 100) * canvas.width - ow / 2;
+    const oy = (pos.yPct / 100) * canvas.height - oh / 2;
 
-    // Trigger download
+    ctx.save();
+    ctx.globalAlpha = parseFloat(overlayBox.style.opacity || 1);
+    ctx.translate(ox + ow / 2, oy + oh / 2);
+    ctx.rotate((rotationDeg || 0) * Math.PI / 180);
+    ctx.drawImage(img, -ow / 2, -oh / 2, ow, oh);
+    ctx.restore();
+
+    // Force download
     const link = document.createElement('a');
     link.download = 'shirt_mockup.png';
     link.href = canvas.toDataURL('image/png');
+    
+    // Some browsers require the link to be in the DOM
+    document.body.appendChild(link);
     link.click();
-
-    URL.revokeObjectURL(url); // cleanup
+    document.body.removeChild(link);
   };
 
-  img.src = url;
+  img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
 });
 
 /* ---------- carousel logic (small previews + arrows) ---------- */

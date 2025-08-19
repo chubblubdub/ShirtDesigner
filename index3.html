@@ -70,7 +70,6 @@ body {
   cursor: grabbing !important;
 }
 
-
 /* Inner SVG sizing */
 #overlayInner svg { 
   width: 100% !important; 
@@ -221,10 +220,10 @@ button, select {
   </div>
 
   <div class="panel">
-  <label>upload/paste custom shirt image</label>
+  <label>Use your own shirt image</label>
   
   <label class="file-upload">
-    📂
+    upload/paste
     <input type="file" id="shirtInput" accept="image/*">
   </label>
 
@@ -365,21 +364,34 @@ stage.addEventListener('drop', e=>{ e.preventDefault(); if(e.dataTransfer.files.
 document.addEventListener('paste', e=>{ for(let item of e.clipboardData.items) if(item.type.indexOf("image")!==-1) loadShirt(URL.createObjectURL(item.getAsFile())); });
 
 function loadShirt(src){
-  const img = new Image();
-  img.src = src;
-  img.onload=()=>{
-    // Limit image to max 600px while preserving aspect ratio
-    let w = img.width, h = img.height;
-    const maxDim = 600;
-    if(w > h && w > maxDim) { h = h * (maxDim/w); w = maxDim; }
-    else if(h >= w && h > maxDim) { w = w * (maxDim/h); h = maxDim; }
-    shirtImg.src = src;
-    shirtImg.width = w;
-    shirtImg.height = h;
-    stage.style.width=w+"px";
-    stage.style.height=h+"px";
-    exportBtn.disabled=false;
-  };
+const img = new Image();
+img.src = src;
+img.onload=()=>{
+  // Original dimensions
+  let w = img.width, h = img.height;
+
+  const maxWidth = 465;
+  const maxHeight = 600;
+
+  // Scale to fit max width
+  if(w > maxWidth){
+    h = h * (maxWidth / w);
+    w = maxWidth;
+  }
+
+  // Scale to fit max height (after width scaling)
+  if(h > maxHeight){
+    w = w * (maxHeight / h);
+    h = maxHeight;
+  }
+
+  shirtImg.src = src;
+  shirtImg.width = w;
+  shirtImg.height = h;
+  stage.style.width=w+"px";
+  stage.style.height=h+"px";
+  exportBtn.disabled=false;
+};
 }
 
 // ---------- load + instrument SVG ----------
@@ -624,7 +636,8 @@ fitBtn.addEventListener('click', ()=>{
   // reset values
   overlayBox.style.opacity = 1;   // opacity must be 0–1 for CSS
   rotationDeg = 0; 
-  sizePct = 40; 
+  sizePct = 40;
+ 
   pos = { xPct: 50, yPct: 32 }; 
   setOverlayTransform();
 
@@ -641,7 +654,7 @@ fitBtn.addEventListener('click', ()=>{
 
 
 // ---------- export ----------
-exportBtn.addEventListener('click', async () => {
+exportBtn.addEventListener('click', () => {
   if (!shirtImg.naturalWidth || !shirtImg.naturalHeight) return;
 
   const canvas = document.createElement('canvas');
@@ -655,35 +668,38 @@ exportBtn.addEventListener('click', async () => {
   const svgNode = overlayInner.querySelector('svg');
   if (!svgNode) return;
 
-  // Clone SVG and serialize
   const svgClone = svgNode.cloneNode(true);
   const svgData = new XMLSerializer().serializeToString(svgClone);
   const img = new Image();
 
-  // Use base64 Data URL to avoid CORS issues
-  img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
-
   img.onload = () => {
-    // overlay size and position
     const ow = (sizePct / 100) * canvas.width;
-    const oh = ow * (overlayBox.offsetHeight / overlayBox.offsetWidth);
+    const oh = ow * (overlayBox.offsetHeight / overlayBox.offsetWidth || 1);
     const ox = (pos.xPct / 100) * canvas.width - ow / 2;
     const oy = (pos.yPct / 100) * canvas.height - oh / 2;
 
     ctx.save();
     ctx.globalAlpha = parseFloat(overlayBox.style.opacity || 1);
     ctx.translate(ox + ow / 2, oy + oh / 2);
-    ctx.rotate(rotationDeg * Math.PI / 180);
+    ctx.rotate((rotationDeg || 0) * Math.PI / 180);
     ctx.drawImage(img, -ow / 2, -oh / 2, ow, oh);
     ctx.restore();
 
-    // trigger download
+    // create temporary link and trigger download
     const link = document.createElement('a');
-    link.href = canvas.toDataURL('image/png');
     link.download = 'shirt_mockup.png';
+    link.href = canvas.toDataURL('image/png');
+
+    // Append to DOM to make sure click works in all browsers
+    document.body.appendChild(link);
     link.click();
+    document.body.removeChild(link);
   };
+
+  // assign src after onload
+  img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
 });
+
 
 /* ---------- carousel logic (small previews + arrows) ---------- */
 const shirtImages = [

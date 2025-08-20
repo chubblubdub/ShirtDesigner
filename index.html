@@ -25,8 +25,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  gap: 16px;
-  max-width: 1600px;
+  gap: 4px;
   width: 100%;
   margin: 0 auto;
 }
@@ -38,16 +37,13 @@ body {
   width: auto;
   height: 550px;
   border-radius: 0px;
-  box-shadow: 0 0 12px rgba(0,0,0,0.2);
 }
 
-.container {
-  max-width: 1200px; /* adjust as needed */
+.container .wrap {
   width: 100%;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px; /* spacing between wrap and notes */
+  justify-content: center;
+  gap: 4px; /* space between left, center, right */
 }
 
 .stage-wrap {
@@ -55,6 +51,8 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
+  margin: 0;
+  padding: 0;
 }
 
 #stage {
@@ -63,6 +61,8 @@ body {
   background: #ffffff;
   border-radius: 8px;
   border: 1px dashed #a8a8a8;
+  margin: 0;
+  padding: 0;
   
 }
 #shirtImg {
@@ -70,6 +70,8 @@ body {
   max-width: 100%;
   max-height: 475px; /* added max size */
   height: auto;
+  margin: 0;
+  padding: 0;
 }
 
 #overlayBox {
@@ -116,10 +118,18 @@ body {
   padding: 12px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 6px;
   max-width: 230px;
   height: auto; /* allow panel to shrink/grow as needed */
 }
+
+.panel-wrap {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+}
+
 label { font-size: 13px; color: #ffffff; }
 input, select, button { font-size: 14px; }
 input[type=file], select, input[type=url], input[type=color] {
@@ -190,7 +200,7 @@ button, select {
 }
 
 .notes {
-  font-size: 11px;
+  font-size: 10px;
   color: #333;
   font-weight: 400;
   text-align: center;
@@ -230,6 +240,11 @@ button, select {
     <div class="guide">
       <img src="https://raw.githubusercontent.com/chubblubdub/ShirtDesigner/main/DesignGuideMini.png" 
            alt="Design Guide" class="guide-img">
+      <!-- Disclaimer / Notes -->
+      <div class="notes">
+        <p>*not all colorways are recommended due to graphics or shadows that appear unrealistic
+        <br>*design size is limited; default size may represent reasonable sizing</p>
+      </div>
     </div>
 
     <!-- Center: Stage -->
@@ -301,11 +316,6 @@ button, select {
     </div>
   </div>
 
-  <!-- Disclaimer / Notes -->
-  <div class="notes">
-    <body>*not all colorways are recommended due to graphics or shadows that appear unrealistic</body><br>
-    <body>*design size is limited; default size may represent reasonable sizing</body>
-  </div>
 </div>
 
 

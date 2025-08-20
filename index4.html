@@ -14,7 +14,7 @@ body {
   background: #ffffff;
   color: #555;
   font-family: 'Montserrat', sans-serif; /* changed from system-ui */
-  font-weight: 700;
+  font-weight: 400;
   font-size: 15px;
   text-transform: lowercase;
   display: flex;
@@ -23,57 +23,36 @@ body {
 }
 .wrap {
   display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  gap: 4px;
+  gap: 16px;
+  max-width: 1200px;
   width: 100%;
-  margin: 0 auto;
-}
-.guide {
-  max-height: 550px; /* adjust as needed */
-}
-
-.guide-img {
-  width: auto;
-  height: 550px;
-  border-radius: 0px;
-}
-
-.container .wrap {
-  width: 100%;
-  display: flex;
+  flex-wrap: wrap;
   justify-content: center;
-  gap: 4px; /* space between left, center, right */
 }
-
 .stage-wrap {
-  flex: 2;
+  background: #ffffff;
+  padding: 10px;
+  border-radius: 12px;
+  border: 0px solid #a8a8a8;
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin: 0;
-  padding: 0;
+  gap: 8px;
+  width: 30%;
 }
-
 #stage {
   position: relative;
   display: inline-block;
   background: #ffffff;
   border-radius: 8px;
   border: 1px dashed #a8a8a8;
-  margin: 0;
-  padding: 0;
-  
 }
 #shirtImg {
   display: block;
   max-width: 100%;
-  max-height: 475px; /* added max size */
+  max-height: 350px; /* added max size */
   height: auto;
-  margin: 0;
-  padding: 0;
 }
-
 #overlayBox {
   position: absolute !important;
   border: 2px dashed black; /* fallback */
@@ -118,18 +97,11 @@ body {
   padding: 12px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 12px;
   max-width: 230px;
   height: auto; /* allow panel to shrink/grow as needed */
+  font-weight=700;
 }
-
-.panel-wrap {
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-  padding: 0;
-}
-
 label { font-size: 13px; color: #ffffff; }
 input, select, button { font-size: 14px; }
 input[type=file], select, input[type=url], input[type=color] {
@@ -170,8 +142,8 @@ button.primary {
   width: 32px;
   height: 32px;
   border: 0px solid #161a2a;
-  background: #f8f8f8;
-  color: #000000;
+  background: #ffffff;
+  color: #ffffff;
   border-radius: 8px;
   cursor: pointer;
   align-items: center;
@@ -197,14 +169,6 @@ button, select {
   text-transform: lowercase;
   font-family: 'Montserrat', sans-serif;
   font-weight: 700;
-}
-
-.notes {
-  font-size: 10px;
-  color: #333;
-  font-weight: 400;
-  text-align: center;
-  width: 100%; /* matches container width */
 }
 
 .file-upload:hover {
@@ -234,90 +198,76 @@ button, select {
 </style>
 </head>
 <body>
-<div class="container">
-  <div class="wrap">
-    <!-- Left: Design Guide Image -->
-    <div class="guide">
-      <img src="https://raw.githubusercontent.com/chubblubdub/ShirtDesigner/main/DesignGuideMini.png" 
-           alt="Design Guide" class="guide-img">
-      <!-- Disclaimer / Notes -->
-      <div class="notes">
-        <p>*not all colorways are recommended due to graphics or shadows that appear unrealistic
-        <br>*design size is limited; default size may represent reasonable sizing</p>
+<div class="wrap">
+  <div class="stage-wrap">
+    <div id="stage">
+      <img id="shirtImg" src="https://jiffyimg.imgix.net/77b1ea2074c5d1.jpg?ixlib=rb-0.3.5&auto=format&fit=fill&fill=solid&trim-color=FFFFFF&trim=color&trim-tol=8&w=307&h=400&dpr=2" alt="shirt image">
+      <div id="overlayBox" hidden>
+        <div id="overlayInner"></div>
+        <div class="handle"></div>
       </div>
     </div>
 
-    <!-- Center: Stage -->
-    <div class="stage-wrap">
-      <div id="stage">
-        <img id="shirtImg" 
-             src="https://jiffyimg.imgix.net/77b1ea2074c5d1.jpg?ixlib=rb-0.3.5&auto=format&fit=fill&fill=solid&trim-color=FFFFFF&trim=color&trim-tol=8&w=614&h=800&dpr=2" 
-             alt="shirt image">
-        <div id="overlayBox" hidden>
-          <div id="overlayInner"></div>
-          <div class="handle"></div>
-        </div>
-      </div>
-
-      <!-- Carousel -->
-      <div class="carousel">
-        <button id="prevShirt" class="carousel-btn" aria-label="previous">◀</button>
-        <div id="thumbStrip" class="thumb-strip"></div>
-        <button id="nextShirt" class="carousel-btn" aria-label="next">▶</button>
-      </div>
-
-      <div class="row">
-        <button id="centerBtn">center</button>
-        <button id="fitBtn">reset</button>
-        <button class="primary" id="exportBtn">download</button>
-      </div>
+    <!-- small carousel just below the shirt -->
+    <div class="carousel">
+      <button id="prevShirt" class="carousel-btn" aria-label="previous"></button>
+      <div id="thumbStrip" class="thumb-strip"></div>
+      <button id="nextShirt" class="carousel-btn" aria-label="next"></button>
     </div>
 
-    <!-- Right: Panel -->
-    <div class="panel-wrap">
-      <div class="panel">
-        <label>Use your own shirt image</label>
-        <label class="file-upload">
-          upload/paste
-          <input type="file" id="shirtInput" accept="image/*">
-        </label>
-
-        <label style="font-size:18px;">select your design</label>
-        <select id="svgSelect"><option value="" disabled selected>loading…</option></select>
-        <button id="reloadBtn">default colors</button>
-
-        <div id="colorPickers"></div>
-
-        <div class="control-row">
-          <label for="scale">size = <span id="scalePct">40%</span></label>
-          <input type="range" id="scale" min="10" max="100" value="40">
-        </div>
-
-        <div class="control-row">
-          <label for="opacity">opacity = <span id="opacityPct">100%</span></label>
-          <input type="range" id="opacity" min="0" max="100" value="100">
-        </div>
-
-        <div class="control-row">
-          <label for="rotation">rotation = <span id="rotDeg">0°</span></label>
-          <input type="range" id="rotation" min="-20" max="20" value="0">
-        </div>
-
-        <div class="control-row" style="flex-direction: column; gap: 6px;">
-          <label for="designCode">design code</label>
-          <input type="text" id="designCode" placeholder="no design selected" 
-                 style="width:94%; padding:6px; border-radius:8px; border:1px solid #1b2033; background:#000; color:#fff;">
-          <div class="row" style="justify-content:space-between; gap:6px; padding-top:6px; width:100%;">
-            <button id="applyCodeBtn" style="flex:1; background:#ffffff; color:#d40000; padding:4px 0; font-size:13px; border-radius:6px; border:1px solid #d40000;">apply code</button>
-            <button id="copyCodeBtn" style="flex:1; background:#ffffff; color:#d40000; padding:4px 0; font-size:13px; border-radius:6px; border:1px solid #d40000;">copy</button>
-          </div>
-        </div>
-      </div>
+    <div class="row">
+      <button id="centerBtn">center</button>
+      <button id="fitBtn">reset</button>
+      <button class="primary" id="exportBtn">download</button>
     </div>
   </div>
 
+  <div class="panel">
+  <label>Use your own shirt image</label>
+  
+  <label class="file-upload">
+    upload/paste
+    <input type="file" id="shirtInput" accept="image/*">
+  </label>
+
+
+  <label style="font-size:18px;">select your design</label>
+  <select id="svgSelect"><option value="" disabled selected>loading…</option></select>
+  <button id="reloadBtn">default colors</button>
+  
+  <div id="colorPickers"></div>
+
+  <div class="control-row">
+    <label for="scale">size = <span id="scalePct">40%</span></label>
+    <input type="range" id="scale" min="10" max="100" value="40">
+  </div>
+
+  <div class="control-row">
+    <label for="opacity">opacity = <span id="opacityPct">100%</span></label>
+    <input type="range" id="opacity" min="0" max="100" value="100">
+  </div>
+
+  <div class="control-row">
+    <label for="rotation">rotation = <span id="rotDeg">0°</span></label>
+    <input type="range" id="rotation" min="-20" max="20" value="0">
+  </div>
+  <div class="control-row" style="flex-direction: column; gap: 6px;">
+  <label for="designCode">design code</label>
+  <input type="text" id="designCode" placeholder="no design selected" style="width:94%; padding:6px; border-radius:8px; border:1px solid #1b2033; background:#000; color:#fff;">
+  <div class="row" style="justify-content:space-between; gap:6px; padding-top:6px; width:100%;">
+  <button id="applyCodeBtn" style="flex:1; background:#ffffff; color:#d40000; padding:4px 0; font-size:13px; border-radius:6px; border:1px solid #d40000;">apply code</button>
+  <button id="copyCodeBtn" style="flex:1; background:#ffffff; color:#d40000; padding:4px 0; font-size:13px; border-radius:6px; border:1px solid #d40000;">copy</button>
 </div>
 
+</div>
+
+  
+</div>
+    
+    <body>*not all colorways are recommended due to graphics or shadows that appear unrealistic<br>
+    *design size is limited; default size may represent reasonable sizing</body>
+    
+</div>
 
 <script>
 const GITHUB_FOLDER_API = "https://api.github.com/repos/chubblubdub/ShirtDesigner/contents/files";
@@ -364,6 +314,7 @@ let sizePct = 40,
     boxStart = {},
     currentSVGEl = null,
     svgText = "";
+    
 
 // ---------- helpers: color normalization ----------
 function expandHex(hex) {
@@ -435,33 +386,30 @@ stage.addEventListener('drop', e=>{ e.preventDefault(); if(e.dataTransfer.files.
 document.addEventListener('paste', e=>{ for(let item of e.clipboardData.items) if(item.type.indexOf("image")!==-1) loadShirt(URL.createObjectURL(item.getAsFile())); });
 
 function loadShirt(src){
-const img = new Image();
-img.src = src;
-img.onload=()=>{
-  // Original dimensions
-  let w = img.width, h = img.height;
+  const img = new Image();
+  img.src = src;
+  img.onload = () => {
+    let w = img.width;
+    let h = img.height;
 
-  const maxWidth = 370;
-  const maxHeight = 475;
+    const maxWidth = 270;
+    const maxHeight = 350;
 
-  // Scale to fit max width
-  if(w > maxWidth){
-    h = h * (maxWidth / w);
-    w = maxWidth;
-  }
+    // Only scale if too big
+    if(w > maxWidth || h > maxHeight){
+      const widthRatio = maxWidth / w;
+      const heightRatio = maxHeight / h;
+      const scale = Math.min(widthRatio, heightRatio);
+      w = w * scale;
+      h = h * scale;
+    }
 
-  // Scale to fit max height (after width scaling)
-  if(h > maxHeight){
-    w = w * (maxHeight / h);
-    h = maxHeight;
-  }
-
-  shirtImg.src = src;
-  shirtImg.width = w;
-  shirtImg.height = h;
-  stage.style.width=w+"px";
-  stage.style.height=h+"px";
-};
+    shirtImg.src = src;
+    shirtImg.width = w;
+    shirtImg.height = h;
+    stage.style.width = w + "px";
+    stage.style.height = h + "px";
+  };
 }
 
 // ---------- load + instrument SVG ----------

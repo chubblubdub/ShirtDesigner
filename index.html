@@ -50,7 +50,7 @@ body {
 #shirtImg {
   display: block;
   max-width: 100%;
-  max-height: 475px; /* added max size */
+  max-height: 350px; /* added max size */
   height: auto;
 }
 #overlayBox {
@@ -142,8 +142,8 @@ button.primary {
   width: 32px;
   height: 32px;
   border: 0px solid #161a2a;
-  background: #f8f8f8;
-  color: #000000;
+  background: #ffffff;
+  color: #ffffff;
   border-radius: 8px;
   cursor: pointer;
   align-items: center;
@@ -210,9 +210,9 @@ button, select {
 
     <!-- small carousel just below the shirt -->
     <div class="carousel">
-      <button id="prevShirt" class="carousel-btn" aria-label="previous">◀</button>
+      <button id="prevShirt" class="carousel-btn" aria-label="previous"></button>
       <div id="thumbStrip" class="thumb-strip"></div>
-      <button id="nextShirt" class="carousel-btn" aria-label="next">▶</button>
+      <button id="nextShirt" class="carousel-btn" aria-label="next"></button>
     </div>
 
     <div class="row">
@@ -314,6 +314,7 @@ let sizePct = 40,
     boxStart = {},
     currentSVGEl = null,
     svgText = "";
+    
 
 // ---------- helpers: color normalization ----------
 function expandHex(hex) {
@@ -385,33 +386,30 @@ stage.addEventListener('drop', e=>{ e.preventDefault(); if(e.dataTransfer.files.
 document.addEventListener('paste', e=>{ for(let item of e.clipboardData.items) if(item.type.indexOf("image")!==-1) loadShirt(URL.createObjectURL(item.getAsFile())); });
 
 function loadShirt(src){
-const img = new Image();
-img.src = src;
-img.onload=()=>{
-  // Original dimensions
-  let w = img.width, h = img.height;
+  const img = new Image();
+  img.src = src;
+  img.onload = () => {
+    let w = img.width;
+    let h = img.height;
 
-  const maxWidth = 370;
-  const maxHeight = 475;
+    const maxWidth = 270;
+    const maxHeight = 350;
 
-  // Scale to fit max width
-  if(w > maxWidth){
-    h = h * (maxWidth / w);
-    w = maxWidth;
-  }
+    // Only scale if too big
+    if(w > maxWidth || h > maxHeight){
+      const widthRatio = maxWidth / w;
+      const heightRatio = maxHeight / h;
+      const scale = Math.min(widthRatio, heightRatio);
+      w = w * scale;
+      h = h * scale;
+    }
 
-  // Scale to fit max height (after width scaling)
-  if(h > maxHeight){
-    w = w * (maxHeight / h);
-    h = maxHeight;
-  }
-
-  shirtImg.src = src;
-  shirtImg.width = w;
-  shirtImg.height = h;
-  stage.style.width=w+"px";
-  stage.style.height=h+"px";
-};
+    shirtImg.src = src;
+    shirtImg.width = w;
+    shirtImg.height = h;
+    stage.style.width = w + "px";
+    stage.style.height = h + "px";
+  };
 }
 
 // ---------- load + instrument SVG ----------

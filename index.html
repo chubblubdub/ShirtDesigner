@@ -496,6 +496,10 @@ function instrumentSVGForColorKeys(svgEl) {
   svgEl.__fillKeys = limited;
 }
 
+// Ensure initial shirt loads at correct size
+const initialShirtSrc = shirtImg.src;
+loadShirt(initialShirtSrc);
+
 function setupColorPickersFromKeys(svgEl) {
   colorPickersDiv.innerHTML = '';
   const keys = svgEl.__fillKeys || [];

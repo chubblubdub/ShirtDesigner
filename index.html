@@ -41,6 +41,15 @@ body {
   box-shadow: 0 0 12px rgba(0,0,0,0.2);
 }
 
+.container {
+  max-width: 1200px; /* adjust as needed */
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px; /* spacing between wrap and notes */
+}
+
 .stage-wrap {
   flex: 2;
   display: flex;
@@ -183,10 +192,9 @@ button, select {
 .notes {
   font-size: 11px;
   color: #333;
-  margin-top: 8px;
-  line-height: 1.2;
   font-weight: 400;
-  max-width: 230px;
+  text-align: center;
+  width: 100%; /* matches container width */
 }
 
 .file-upload:hover {
@@ -216,90 +224,90 @@ button, select {
 </style>
 </head>
 <body>
-<div class="wrap">
-  <!-- Left: Design Guide Image -->
-  <div class="guide">
-    <img src="https://raw.githubusercontent.com/chubblubdub/ShirtDesigner/main/DesignGuideMini.png" 
-         alt="Design Guide" class="guide-img">
-  </div>
+<div class="container">
+  <div class="wrap">
+    <!-- Left: Design Guide Image -->
+    <div class="guide">
+      <img src="https://raw.githubusercontent.com/chubblubdub/ShirtDesigner/main/DesignGuideMini.png" 
+           alt="Design Guide" class="guide-img">
+    </div>
 
-  <!-- Center: Stage -->
-  <div class="stage-wrap">
-    <div id="stage">
-      <img id="shirtImg" 
-           src="https://jiffyimg.imgix.net/77b1ea2074c5d1.jpg?ixlib=rb-0.3.5&auto=format&fit=fill&fill=solid&trim-color=FFFFFF&trim=color&trim-tol=8&w=307&h=400&dpr=2" 
-           alt="shirt image">
-      <div id="overlayBox" hidden>
-        <div id="overlayInner"></div>
-        <div class="handle"></div>
+    <!-- Center: Stage -->
+    <div class="stage-wrap">
+      <div id="stage">
+        <img id="shirtImg" 
+             src="https://jiffyimg.imgix.net/77b1ea2074c5d1.jpg?ixlib=rb-0.3.5&auto=format&fit=fill&fill=solid&trim-color=FFFFFF&trim=color&trim-tol=8&w=307&h=400&dpr=2" 
+             alt="shirt image">
+        <div id="overlayBox" hidden>
+          <div id="overlayInner"></div>
+          <div class="handle"></div>
+        </div>
+      </div>
+
+      <!-- Carousel -->
+      <div class="carousel">
+        <button id="prevShirt" class="carousel-btn" aria-label="previous">◀</button>
+        <div id="thumbStrip" class="thumb-strip"></div>
+        <button id="nextShirt" class="carousel-btn" aria-label="next">▶</button>
+      </div>
+
+      <div class="row">
+        <button id="centerBtn">center</button>
+        <button id="fitBtn">reset</button>
+        <button class="primary" id="exportBtn">download</button>
       </div>
     </div>
 
-    <!-- Carousel -->
-    <div class="carousel">
-      <button id="prevShirt" class="carousel-btn" aria-label="previous">◀</button>
-      <div id="thumbStrip" class="thumb-strip"></div>
-      <button id="nextShirt" class="carousel-btn" aria-label="next">▶</button>
-    </div>
-
-    <div class="row">
-      <button id="centerBtn">center</button>
-      <button id="fitBtn">reset</button>
-      <button class="primary" id="exportBtn">download</button>
-    </div>
-  </div>
-
-  <div class="panel-wrap">
-  <div class="panel">
     <!-- Right: Panel -->
-  <div class="panel">
-    <label>Use your own shirt image</label>
-    <label class="file-upload">
-      upload/paste
-      <input type="file" id="shirtInput" accept="image/*">
-    </label>
+    <div class="panel-wrap">
+      <div class="panel">
+        <label>Use your own shirt image</label>
+        <label class="file-upload">
+          upload/paste
+          <input type="file" id="shirtInput" accept="image/*">
+        </label>
 
-    <label style="font-size:18px;">select your design</label>
-    <select id="svgSelect"><option value="" disabled selected>loading…</option></select>
-    <button id="reloadBtn">default colors</button>
+        <label style="font-size:18px;">select your design</label>
+        <select id="svgSelect"><option value="" disabled selected>loading…</option></select>
+        <button id="reloadBtn">default colors</button>
 
-    <div id="colorPickers"></div>
+        <div id="colorPickers"></div>
 
-    <div class="control-row">
-      <label for="scale">size = <span id="scalePct">40%</span></label>
-      <input type="range" id="scale" min="10" max="100" value="40">
-    </div>
+        <div class="control-row">
+          <label for="scale">size = <span id="scalePct">40%</span></label>
+          <input type="range" id="scale" min="10" max="100" value="40">
+        </div>
 
-    <div class="control-row">
-      <label for="opacity">opacity = <span id="opacityPct">100%</span></label>
-      <input type="range" id="opacity" min="0" max="100" value="100">
-    </div>
+        <div class="control-row">
+          <label for="opacity">opacity = <span id="opacityPct">100%</span></label>
+          <input type="range" id="opacity" min="0" max="100" value="100">
+        </div>
 
-    <div class="control-row">
-      <label for="rotation">rotation = <span id="rotDeg">0°</span></label>
-      <input type="range" id="rotation" min="-20" max="20" value="0">
-    </div>
+        <div class="control-row">
+          <label for="rotation">rotation = <span id="rotDeg">0°</span></label>
+          <input type="range" id="rotation" min="-20" max="20" value="0">
+        </div>
 
-    <div class="control-row" style="flex-direction: column; gap: 6px;">
-      <label for="designCode">design code</label>
-      <input type="text" id="designCode" placeholder="no design selected" 
-             style="width:94%; padding:6px; border-radius:8px; border:1px solid #1b2033; background:#000; color:#fff;">
-      <div class="row" style="justify-content:space-between; gap:6px; padding-top:6px; width:100%;">
-        <button id="applyCodeBtn" style="flex:1; background:#ffffff; color:#d40000; padding:4px 0; font-size:13px; border-radius:6px; border:1px solid #d40000;">apply code</button>
-        <button id="copyCodeBtn" style="flex:1; background:#ffffff; color:#d40000; padding:4px 0; font-size:13px; border-radius:6px; border:1px solid #d40000;">copy</button>
+        <div class="control-row" style="flex-direction: column; gap: 6px;">
+          <label for="designCode">design code</label>
+          <input type="text" id="designCode" placeholder="no design selected" 
+                 style="width:94%; padding:6px; border-radius:8px; border:1px solid #1b2033; background:#000; color:#fff;">
+          <div class="row" style="justify-content:space-between; gap:6px; padding-top:6px; width:100%;">
+            <button id="applyCodeBtn" style="flex:1; background:#ffffff; color:#d40000; padding:4px 0; font-size:13px; border-radius:6px; border:1px solid #d40000;">apply code</button>
+            <button id="copyCodeBtn" style="flex:1; background:#ffffff; color:#d40000; padding:4px 0; font-size:13px; border-radius:6px; border:1px solid #d40000;">copy</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
-  </div>
 
-  <!-- disclaimer right under the whole panel -->
+  <!-- Disclaimer / Notes -->
   <div class="notes">
-  <body>*not all colorways are recommended due to graphics or shadows that appear unrealistic<br></body>
-  <body>*design size is limited; default size may represent reasonable sizing</body>
-</div>
+    <body>*not all colorways are recommended due to graphics or shadows that appear unrealistic</body><br>
+    <body>*design size is limited; default size may represent reasonable sizing</body>
+  </div>
 </div>
 
-</div>
 
 <script>
 const GITHUB_FOLDER_API = "https://api.github.com/repos/chubblubdub/ShirtDesigner/contents/files";

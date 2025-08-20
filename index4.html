@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+</html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CGbC Shirt Design Tool</title>
+<!-- Load Montserrat from Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="https://raw.githubusercontent.com/chubblubdub/ShirtDesigner/main/CGbC.svg">
+<style>
+body {
+  margin: 0;
+  background: #ffffff;
+  color: #555;
+  font-family: 'Montserrat', sans-serif; /* changed from system-ui */
+  font-weight: 700;
+  font-size: 15px;
+  text-transform: lowercase;
+  display: flex;
+  justify-content: center;
+  padding: 8px;
+}
+.wrap {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 4px;
+  width: 100%;
+  margin: 0 auto;
+}
+.guide {
+  max-height: 550px; /* adjust as needed */
+}
+
+.guide-img {
+  width: auto;
+  height: 550px;
+  border-radius: 0px;
+}
+
+.container .wrap {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  gap: 4px; /* space between left, center, right */
+}
+
+.stage-wrap {
+  flex: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+}
+
+#stage {
+  position: relative;
+  display: inline-block;
+  background: #ffffff;
+  border-radius: 8px;
+  border: 1px dashed #a8a8a8;
+  margin: 0;
+  padding: 0;
+  
+}
+#shirtImg {
+  display: block;
+  max-width: 100%;
+  max-height: 475px; /* added max size */
+  height: auto;
+  margin: 0;
+  padding: 0;
+}
+
+#overlayBox {
+  position: absolute !important;
+  border: 2px dashed black; /* fallback */
+  border-width: 1px !important;
+  cursor: grab !important;
+  z-index: 9999 !important;
+
+  /* Black-and-white dashed */
+  border-style: solid;
+  border-image: repeating-linear-gradient(
+    45deg, 
+    black 0 2px, 
+    white 2px 4px
+  ) 1 round !important;
+}
+#overlayBox.dragging {
+  cursor: grabbing !important;
+}
+
+/* Inner SVG sizing */
+#overlayInner svg { 
+  width: 100% !important; 
+  height: auto !important; 
+  display: block !important; 
+}
+
+.handle {
+  width: 12px;
+  height: 12px;
+  background: #ffffff;
+  border: 2px solid #000000;
+  position: absolute;
+  bottom: -8px;
+  right: -8px;
+  cursor: nwse-resize;
+  border-radius: 4px;
+}
+.panel {
+  background: #d40000;
+  border-radius: 12px;
+  border: 0px solid #000000;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 230px;
+  height: auto; /* allow panel to shrink/grow as needed */
+}
+
+.panel-wrap {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+}
+
+label { font-size: 13px; color: #ffffff; }
+input, select, button { font-size: 14px; }
+input[type=file], select, input[type=url], input[type=color] {
+  width: 100%;
+  padding: 6px;
+  border-radius: 8px;
+  border: 1px solid #1b2033;
+  background: #000000;
+  color: #ffffff;
+}
+input[type=range] { width: 100%; }
+button {
+  padding: 8px 12px;
+  background: #000000;
+  color: #ffffff;
+  border-radius: 8px;
+  border: 0px solid #161a2a;
+  cursor: pointer;
+}
+button.primary {
+  background: #d40000;
+  color: #ffffff;
+  border-color: #5d83ff;
+}
+.row { display: flex; gap: 8px; align-items: center; justify-content: center; } /* center only horizontally */
+.pill { background: #0f1322; padding: 2px 6px; border-radius: 999px; font-size: 12px; }
+.color-picker-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.color-picker-row input { width: 40px; height: 30px; padding:0; }
+
+/* carousel (small thumbnails under shirt) */
+.carousel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 0px;
+}
+.carousel-btn {
+  width: 32px;
+  height: 32px;
+  border: 0px solid #161a2a;
+  background: #f8f8f8;
+  color: #000000;
+  border-radius: 8px;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  display: flex;
+}
+button, select {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 400;
+}
+
+.file-upload input[type="file"] {
+  display: none;
+}
+
+.file-upload {
+  display: inline-block;
+  padding: 8px 16px;
+  background: #000000;
+  color: #fff;
+  cursor: pointer;
+  border-radius: 4px;
+  text-transform: lowercase;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
+}
+
+.notes {
+  font-size: 10px;
+  color: #333;
+  font-weight: 400;
+  text-align: center;
+  width: 100%; /* matches container width */
+}
+
+.file-upload:hover {
+  background: #222222;
+}
+
+.thumb-strip {
+  display: flex;
+  gap: 6px;
+  overflow: hidden;
+  padding: 4px 6px;
+  border-radius: 8px;
+}
+.thumb {
+  width: 56px;        /* small previews */
+  height: auto;
+  border-radius: 12px;
+  border: 1px solid #a8a8a8;
+  opacity: 1;
+  cursor: pointer;
+}
+.thumb.active {
+  border: 2px solid #000000;
+  border-radius: 12px;
+  opacity: 1;
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="wrap">
+    <!-- Left: Design Guide Image -->
+    <div class="guide">
+      <img src="https://raw.githubusercontent.com/chubblubdub/ShirtDesigner/main/DesignGuideMini.png" 
+           alt="Design Guide" class="guide-img">
+      <!-- Disclaimer / Notes -->
+      <div class="notes">
+        <p>*not all colorways are recommended due to graphics or shadows that appear unrealistic
+        <br>*design size is limited; default size may represent reasonable sizing</p>
+      </div>
+    </div>
+
+    <!-- Center: Stage -->
+    <div class="stage-wrap">
+      <div id="stage">
+        <img id="shirtImg" 
+             src="https://jiffyimg.imgix.net/77b1ea2074c5d1.jpg?ixlib=rb-0.3.5&auto=format&fit=fill&fill=solid&trim-color=FFFFFF&trim=color&trim-tol=8&w=307&h=400&dpr=2" 
+             alt="shirt image">
+        <div id="overlayBox" hidden>
+          <div id="overlayInner"></div>
+          <div class="handle"></div>
+        </div>
+      </div>
+
+      <!-- Carousel -->
+      <div class="carousel">
+        <button id="prevShirt" class="carousel-btn" aria-label="previous">◀</button>
+        <div id="thumbStrip" class="thumb-strip"></div>
+        <button id="nextShirt" class="carousel-btn" aria-label="next">▶</button>
+      </div>
+
+      <div class="row">
+        <button id="centerBtn">center</button>
+        <button id="fitBtn">reset</button>
+        <button class="primary" id="exportBtn">download</button>
+      </div>
+    </div>
+
+    <!-- Right: Panel -->
+    <div class="panel-wrap">
+      <div class="panel">
+        <label>Use your own shirt image</label>
+        <label class="file-upload">
+          upload/paste
+          <input type="file" id="shirtInput" accept="image/*">
+        </label>
+
+        <label style="font-size:18px;">select your design</label>
+        <select id="svgSelect"><option value="" disabled selected>loading…</option></select>
+        <button id="reloadBtn">default colors</button>
+
+        <div id="colorPickers"></div>
+
+        <div class="control-row">
+          <label for="scale">size = <span id="scalePct">40%</span></label>
+          <input type="range" id="scale" min="10" max="100" value="40">
+        </div>
+
+        <div class="control-row">
+          <label for="opacity">opacity = <span id="opacityPct">100%</span></label>
+          <input type="range" id="opacity" min="0" max="100" value="100">
+        </div>
+
+        <div class="control-row">
+          <label for="rotation">rotation = <span id="rotDeg">0°</span></label>
+          <input type="range" id="rotation" min="-20" max="20" value="0">
+        </div>
+
+        <div class="control-row" style="flex-direction: column; gap: 6px;">
+          <label for="designCode">design code</label>
+          <input type="text" id="designCode" placeholder="no design selected" 
+                 style="width:94%; padding:6px; border-radius:8px; border:1px solid #1b2033; background:#000; color:#fff;">
+          <div class="row" style="justify-content:space-between; gap:6px; padding-top:6px; width:100%;">
+            <button id="applyCodeBtn" style="flex:1; background:#ffffff; color:#d40000; padding:4px 0; font-size:13px; border-radius:6px; border:1px solid #d40000;">apply code</button>
+            <button id="copyCodeBtn" style="flex:1; background:#ffffff; color:#d40000; padding:4px 0; font-size:13px; border-radius:6px; border:1px solid #d40000;">copy</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+
+<script>
+const GITHUB_FOLDER_API = "https://api.github.com/repos/chubblubdub/ShirtDesigner/contents/files";
+const shirtInput = document.getElementById('shirtInput');
+const shirtImg = document.getElementById('shirtImg');
+const stage = document.getElementById('stage');
+const overlayBox = document.getElementById('overlayBox');
+const overlayInner = document.getElementById('overlayInner');
+const handle = overlayBox.querySelector('.handle');
+const svgSelect = document.getElementById('svgSelect');
+const reloadBtn = document.getElementById('reloadBtn'); // keep reload
+const colorPickersDiv = document.getElementById('colorPickers');
+const opacityInput = document.getElementById('opacity');
+const opacityPct = document.getElementById('opacityPct');
+const scaleInput = document.getElementById('scale');
+const scalePct = document.getElementById('scalePct');
+const rotationInput = document.getElementById('rotation');
+const rotDeg = document.getElementById('rotDeg');
+const exportBtn = document.getElementById('exportBtn');
+const centerBtn = document.getElementById('centerBtn');
+const fitBtn = document.getElementById('fitBtn');
+
+/* carousel nodes */
+const prevShirtBtn = document.getElementById('prevShirt');
+const nextShirtBtn = document.getElementById('nextShirt');
+const thumbStrip = document.getElementById('thumbStrip');
+
+const container = stage; // instead of overlayContainer
+
+// global saved codes for each SVG index
+const savedDesignCodes = {}; // { svgIndex: codeString }
+
+function calcYPct(topPct) {
+    const containerHeight = container.offsetHeight;
+    const overlayHeight = overlayBox.offsetHeight;
+    return topPct + (overlayHeight / containerHeight) * 50;
+}
+
+let sizePct = 40,
+    rotationDeg = 0,
+    isDragging = false,
+    isResizing = false,
+    dragStart = {},
+    boxStart = {},
+    currentSVGEl = null,
+    svgText = "";
+
+// ---------- helpers: color normalization ----------
+function expandHex(hex) {
+  // "#abc" -> "#aabbcc"
+  return '#' + hex[1] + hex[1] + hex[2] + hex[2] + hex[3] + hex[3];
+}
+
+function rgbToHex(r,g,b){
+  const toHex = v => ('0' + Math.max(0, Math.min(255, v|0)).toString(16)).slice(-2);
+  return '#' + toHex(r) + toHex(g) + toHex(b);
+}
+
+function normalizeColor(c) {
+  if (!c) return null;
+  let s = String(c).trim().toLowerCase();
+
+  // named colors (we only need a couple here)
+  if (s === 'white') return '#ffffff';
+  if (s === 'black') return '#000000';
+  if (s === 'red')   return '#d40000';
+
+  // hex
+  if (/^#([0-9a-f]{3})$/i.test(s)) return expandHex(s);
+  if (/^#([0-9a-f]{6})$/i.test(s)) return s;
+
+  // rgb or rgba
+  const m = s.match(/^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)(?:\s*,\s*[\d.]+\s*)?\)$/i);
+  if (m) return rgbToHex(+m[1], +m[2], +m[3]);
+
+  // anything else we can't safely normalize (gradients/urls/none)
+  if (s === 'none' || s.startsWith('url(')) return null;
+
+  return s; // last resort: return as-is (still used consistently during matching)
+}
+
+async function loadSVGList() {
+  svgSelect.innerHTML = '<option value="" disabled selected>select a design…</option>';
+  const resp = await fetch(GITHUB_FOLDER_API);
+  const files = await resp.json();
+
+  // Filter only SVGs
+  const svgFiles = files.filter(file => file.name.endsWith('.svg'));
+
+  // Sort by numeric value in filename (assumes filename contains a number)
+  svgFiles.sort((a, b) => {
+    const getNumber = name => {
+      const m = name.match(/\d+/); // extract first number
+      return m ? parseInt(m[0], 10) : Infinity;
+    };
+    return getNumber(a.name) - getNumber(b.name);
+  });
+
+  svgFiles.forEach(file => {
+    const opt = document.createElement('option');
+    opt.value = file.download_url;
+    opt.textContent = file.name.replace('.svg','');
+    svgSelect.appendChild(opt);
+    
+    pos = { xPct: 50, yPct: calcYPct(25) };
+    
+  });
+}
+loadSVGList();
+
+// ---------- shirt loaders ----------
+shirtInput.addEventListener('change', e=>{ if(e.target.files[0]) loadShirt(URL.createObjectURL(e.target.files[0])); });
+stage.addEventListener('dragover', e=>e.preventDefault());
+stage.addEventListener('drop', e=>{ e.preventDefault(); if(e.dataTransfer.files.length) loadShirt(URL.createObjectURL(e.dataTransfer.files[0])); });
+document.addEventListener('paste', e=>{ for(let item of e.clipboardData.items) if(item.type.indexOf("image")!==-1) loadShirt(URL.createObjectURL(item.getAsFile())); });
+
+function loadShirt(src){
+const img = new Image();
+img.src = src;
+img.onload=()=>{
+  // Original dimensions
+  let w = img.width, h = img.height;
+
+  const maxWidth = 370;
+  const maxHeight = 475;
+
+  // Scale to fit max width
+  if(w > maxWidth){
+    h = h * (maxWidth / w);
+    w = maxWidth;
+  }
+
+  // Scale to fit max height (after width scaling)
+  if(h > maxHeight){
+    w = w * (maxHeight / h);
+    h = maxHeight;
+  }
+
+  shirtImg.src = src;
+  shirtImg.width = w;
+  shirtImg.height = h;
+  stage.style.width=w+"px";
+  stage.style.height=h+"px";
+};
+}
+
+// ---------- load + instrument SVG ----------
+svgSelect.addEventListener('change', ()=>loadSVG(svgSelect.value));
+reloadBtn.addEventListener('click', ()=>{ const url = svgSelect.value; if (url) loadSVG(url); });
+
+async function loadSVG(url) {
+  if(!url) return;
+  svgText = await (await fetch(url)).text();
+  svgText = svgText.replace(/<style[\s\S]*?<\/style>/gi,"");
+
+  overlayInner.innerHTML = svgText;
+  currentSVGEl = overlayInner.querySelector('svg');
+  if(!currentSVGEl) return;
+
+  // RESET overlay to defaults
+  resetOverlayDefaults();
+
+  instrumentSVGForColorKeys(currentSVGEl);
+  setupColorPickersFromKeys(currentSVGEl);
+
+  overlayBox.hidden=false;
+  overlayBox.style.border='1px dashed #7aa2ff';
+  handle.style.display='block';
+
+  // Apply saved code if exists
+  const svgIndex = Array.from(svgSelect.options).findIndex(opt => opt.value === url);
+  if(savedDesignCodes[svgIndex]){
+    applyDesignCode(savedDesignCodes[svgIndex]);
+    designCodeInput.value = savedDesignCodes[svgIndex];
+  } else {
+    designCodeInput.value = generateDesignCode(); // default
+  }
+  
+  resetOverlayDefaults();
+
+}
+
+function getElementOriginalFill(el) {
+  // prefer inline style fill if present; else fill attribute
+  const style = el.getAttribute('style') || '';
+  const styleMatch = style.match(/(^|;)\s*fill\s*:\s*([^;]+)/i);
+  if (styleMatch) return normalizeColor(styleMatch[2]);
+
+  const attrFill = el.getAttribute('fill');
+  if (attrFill) return normalizeColor(attrFill);
+
+  return null;
+}
+
+function instrumentSVGForColorKeys(svgEl) {
+  // collect unique normalized fills (skip none/gradients)
+  const fills = [];
+  const seen = new Set();
+
+  const nodes = svgEl.querySelectorAll('*');
+  nodes.forEach(el => {
+    const f = getElementOriginalFill(el);
+    if (!f) return;
+    if (!seen.has(f)) {
+      seen.add(f);
+      fills.push(f);
+    }
+  });
+
+  // cap at 5 keys
+  const limited = fills.slice(0, 5);
+
+  // assign key indices to elements based on ORIGINAL fill (stable even after recolor)
+  nodes.forEach(el => {
+    const f = getElementOriginalFill(el);
+    if (!f) return;
+    const keyIndex = limited.indexOf(f);
+    if (keyIndex !== -1) {
+      el.setAttribute('data-fill-key', String(keyIndex));
+      // remember whether it had style-based fill initially (so we update the right place later)
+      const style = el.getAttribute('style') || '';
+      const styleHasFill = /(^|;)\s*fill\s*:\s*[^;]+/i.test(style);
+      el.setAttribute('data-fill-source', styleHasFill ? 'style' : 'attr');
+    }
+  });
+
+  // store keys list on the svg for later
+  svgEl.__fillKeys = limited;
+}
+
+function setupColorPickersFromKeys(svgEl) {
+  colorPickersDiv.innerHTML = '';
+  const keys = svgEl.__fillKeys || [];
+  if (!keys.length) return;
+
+  keys.forEach((origColor, idx) => {
+    const palette = [
+      { hex: '#000000', label: 'black' },
+      { hex: '#ffffff', label: 'white' },
+      { hex: '#d40000', label: 'red' },
+      { hex: 'none', label: 'no fill' }
+    ];
+
+    const row = document.createElement('div');
+    row.style.display = 'flex';
+    row.style.gap = '6px';
+    row.style.padding = '3px';
+
+    palette.forEach(p => {
+      const btn = document.createElement('button');
+      btn.textContent = '   ';
+      btn.style.background = (p.hex === 'none') 
+    ? 'url("https://p7.hiclipart.com/preview/290/536/901/royalty-free-photography-illustration-checkerboard.jpg") center/cover no-repeat' 
+    : p.hex;
+      btn.style.border = (p.hex === '#d40000') ? '2px solid #fff' : '1px solid #aaa';
+      btn.style.width = '80px';
+      btn.style.height = '20px';
+      btn.style.cursor = 'pointer';
+      btn.style.fontSize = '15px';
+      btn.style.display = 'flex';
+      btn.style.alignItems = 'center';
+      btn.style.justifyContent = 'center';
+      btn.style.lineHeight = '1';
+      btn.dataset.colorValue = p.hex;
+
+      const updateX = (button) => {
+        if (button.dataset.colorValue === '#ffffff' || button.dataset.colorValue === 'none') {
+          button.style.color = '#000000';
+        } else {
+          button.style.color = '#ffffff';
+        }
+      };
+
+      updateX(btn);
+
+      btn.addEventListener('click', () => {
+        const alreadySelected = btn.textContent.includes('✖');
+
+        if (alreadySelected) {
+          // deselect -> automatically select no-fill
+          Array.from(row.children).forEach(b => b.textContent = '   ');
+          const noFillBtn = Array.from(row.children).find(b => b.dataset.colorValue === 'none');
+          if (noFillBtn) noFillBtn.textContent = ' ✖';
+          applyColorChangeForKey(idx, 'none');
+        } else {
+          // select this button
+          Array.from(row.children).forEach(b => b.textContent = '   ');
+          btn.textContent = ' ✖';
+          applyColorChangeForKey(idx, btn.dataset.colorValue);
+        }
+
+        // update design code
+        designCodeInput.value = generateDesignCode();
+      });
+
+      row.appendChild(btn);
+    });
+
+    colorPickersDiv.appendChild(row);
+  });
+}
+
+// precise recolor: only elements that ORIGINALLY had this key
+function applyColorChangeForKey(keyIndex, newColor) {
+  if (!currentSVGEl) return;
+
+  const targets = currentSVGEl.querySelectorAll(`[data-fill-key="${keyIndex}"]`);
+  targets.forEach(el => {
+    const source = el.getAttribute('data-fill-source') || 'attr';
+    if (source === 'style') {
+      // update only the style's fill property
+      const style = el.getAttribute('style') || '';
+      let updated = '';
+      let seenFill = false;
+      style.split(';').forEach(chunk => {
+        const [propRaw, valRaw] = chunk.split(':');
+        if (!propRaw) return;
+        const prop = propRaw.trim().toLowerCase();
+        const val = (valRaw || '').trim();
+        if (prop === 'fill') {
+          updated += (updated ? ';' : '') + `fill:${newColor}`;
+          seenFill = true;
+        } else if (prop) {
+          updated += (updated ? ';' : '') + `${prop}:${val}`;
+        }
+      });
+      if (!seenFill) {
+        updated += (updated ? ';' : '') + `fill:${newColor}`;
+      }
+      el.setAttribute('style', updated);
+      // also clear conflicting presentation attribute if present
+      if (el.hasAttribute('fill')) el.setAttribute('fill', newColor);
+    } else {
+      // attribute-based fill
+      el.setAttribute('fill', newColor);
+      // if style also had fill somehow, keep them consistent
+      const style = el.getAttribute('style') || '';
+      if (/(^|;)\s*fill\s*:\s*[^;]+/i.test(style)) {
+        const updated = style.replace(/(^|;)\s*fill\s*:\s*[^;]+/i, m => m.replace(/:\s*[^;]+/i, `:${newColor}`));
+        el.setAttribute('style', updated);
+      }
+    }
+  });
+}
+
+// ---------- overlay transform ----------
+overlayBox.addEventListener('mousedown', e=>{
+  if(e.target===handle) isResizing=true; else isDragging=true;
+  dragStart={x:e.clientX, y:e.clientY};
+  boxStart={...pos, size:sizePct};
+  overlayBox.classList.add('dragging');
+});
+document.addEventListener('mousemove', e=>{
+  if(isDragging){
+    const rect=stage.getBoundingClientRect();
+    pos.xPct=boxStart.xPct + (e.clientX-dragStart.x)/rect.width*100;
+    pos.yPct=boxStart.yPct + (e.clientY-dragStart.y)/rect.height*100;
+    setOverlayTransform();
+  }
+  if(isResizing){
+    const rect=stage.getBoundingClientRect();
+    sizePct=Math.max(5, boxStart.size + (e.clientX-dragStart.x)/rect.width*100);
+    scalePct.textContent=Math.round(sizePct)+"%";
+    setOverlayTransform();
+  }
+});
+document.addEventListener('mouseup', ()=>{ isDragging=false; isResizing=false; overlayBox.classList.remove('dragging'); });
+
+function setOverlayTransform(){
+  overlayBox.style.left=pos.xPct+"%";
+  overlayBox.style.top=pos.yPct+"%";
+  overlayBox.style.width=sizePct+"%";
+  overlayBox.style.transform=`translate(-50%,-50%) rotate(${rotationDeg}deg)`;
+}
+
+// Hide overlay border when clicking outside
+document.addEventListener('click', e=>{
+  if(!overlayBox.contains(e.target) && e.target!==svgSelect && e.target!==reloadBtn){
+    overlayBox.style.border='none';
+    handle.style.display='none';
+  } else {
+    overlayBox.style.border='1px dashed #7aa2ff';
+    handle.style.display='block';
+  }
+});
+
+// ---------- UI events ----------
+opacityInput.addEventListener('input', ()=>{ opacityPct.textContent=opacityInput.value+"%"; overlayBox.style.opacity=opacityInput.value/100; });
+scaleInput.addEventListener('input', ()=>{ sizePct=parseInt(scaleInput.value); scalePct.textContent=sizePct+"%"; setOverlayTransform(); });
+rotationInput.addEventListener('input', ()=>{ rotationDeg=parseInt(rotationInput.value); rotDeg.textContent=rotationDeg+"°"; setOverlayTransform(); });
+centerBtn.addEventListener('click', ()=>{ pos.xPct=50; setOverlayTransform(); }); // horizontal only
+
+// reset button uses the same calculation
+fitBtn.addEventListener('click', () => { 
+    overlayBox.style.opacity = 1;
+    rotationDeg = 0;
+    sizePct = 40;
+
+    pos = { xPct: 50, yPct: calcYPct(25) }; 
+    setOverlayTransform();
+
+    document.getElementById("scale").value = 40;
+    document.getElementById("scalePct").textContent = "40%";
+
+    document.getElementById("opacity").value = 100;
+    document.getElementById("opacityPct").textContent = "100%";
+
+    document.getElementById("rotation").value = 0;
+    document.getElementById("rotDeg").textContent = "0°";
+});
+
+exportBtn.addEventListener('click', () => {
+  if (!shirtImg.naturalWidth || !shirtImg.naturalHeight) return;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = shirtImg.naturalWidth;
+  canvas.height = shirtImg.naturalHeight;
+  const ctx = canvas.getContext('2d');
+
+  // Draw the shirt first
+  ctx.drawImage(shirtImg, 0, 0, canvas.width, canvas.height);
+
+  const svgNode = overlayInner.querySelector('svg');
+  if (!svgNode) return;
+
+  const svgClone = svgNode.cloneNode(true);
+  const svgData = new XMLSerializer().serializeToString(svgClone);
+
+  const img = new Image();
+  img.onload = () => {
+    const ow = (sizePct / 100) * canvas.width;
+    const oh = ow * (overlayBox.offsetHeight / overlayBox.offsetWidth || 1);
+    const ox = (pos.xPct / 100) * canvas.width - ow / 2;
+    const oy = (pos.yPct / 100) * canvas.height - oh / 2;
+
+    ctx.save();
+    ctx.globalAlpha = parseFloat(overlayBox.style.opacity || 1);
+    ctx.translate(ox + ow / 2, oy + oh / 2);
+    ctx.rotate((rotationDeg || 0) * Math.PI / 180);
+    ctx.drawImage(img, -ow / 2, -oh / 2, ow, oh);
+    ctx.restore();
+
+    // Convert canvas to Blob and trigger download
+    canvas.toBlob((blob) => {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'shirt_mockup.png';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url); // free memory
+    }, 'image/png');
+  };
+
+  img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+});
+
+/* ---------- carousel logic (small previews + arrows) ---------- */
+const shirtImages = [
+  "https://jiffyimg.imgix.net/77b1ea2074c5d1.jpg?ixlib=rb-0.3.5&auto=format&fit=fill&fill=solid&trim-color=FFFFFF&trim=color&trim-tol=8&w=307&h=400&dpr=2",
+  "https://jiffyimg.imgix.net/269d2746fa9623.jpg?ixlib=rb-0.3.5&auto=format&fit=fill&fill=solid&trim-color=FFFFFF&trim=color&trim-tol=8&w=307&h=400&q=80&dpr=2",
+  "https://jiffyimg.imgix.net/85c0566a0cc35a.jpg?ixlib=rb-0.3.5&auto=format&fit=fill&fill=solid&trim-color=FFFFFF&trim=color&trim-tol=8&w=307&h=400&q=80&dpr=2",
+  "https://jiffy.imgix.net/6679eac1dc8872.jpg?ixlib=rb-0.3.5&auto=format&fit=fill&fill=solid&trim-color=FFFFFF&trim=color&trim-tol=8&w=307&h=400&dpr=2",
+  "https://jiffyimg.imgix.net/ce5eafee37c17c.jpg?ixlib=rb-0.3.5&auto=format&fit=fill&fill=solid&trim-color=FFFFFF&trim=color&trim-tol=8&w=307&h=400&dpr=2"
+];
+
+let currentShirtIndex = 0;
+
+function renderThumbs() {
+  thumbStrip.innerHTML = '';
+  shirtImages.forEach((src, i) => {
+    const t = document.createElement('img');
+    t.src = src;
+    t.className = 'thumb' + (i===currentShirtIndex ? ' active' : '');
+    t.addEventListener('click', () => {
+      currentShirtIndex = i;
+      updateShirtFromCarousel();
+    });
+    thumbStrip.appendChild(t);
+  });
+}
+
+function resetOverlayDefaults() {
+  sizePct = 40;
+  rotationDeg = 0;
+  pos = { xPct: 50, yPct: calcYPct(25) };
+  overlayBox.style.opacity = 1;
+  scaleInput.value = sizePct;
+  scalePct.textContent = sizePct + "%";
+  rotationInput.value = rotationDeg;
+  rotDeg.textContent = rotationDeg + "°";
+  opacityInput.value = 100;
+  opacityPct.textContent = "100%";
+  setOverlayTransform();
+}
+
+function updateShirtFromCarousel() {
+  loadShirt(shirtImages[currentShirtIndex]);
+  renderThumbs();
+}
+
+prevShirtBtn.addEventListener('click', ()=>{
+  currentShirtIndex = (currentShirtIndex - 1 + shirtImages.length) % shirtImages.length;
+  updateShirtFromCarousel();
+});
+
+nextShirtBtn.addEventListener('click', ()=>{
+  currentShirtIndex = (currentShirtIndex + 1) % shirtImages.length;
+  updateShirtFromCarousel();
+});
+
+renderThumbs();
+
+const designCodeInput = document.getElementById('designCode');
+const applyCodeBtn = document.getElementById('applyCodeBtn');
+const copyCodeBtn = document.getElementById('copyCodeBtn');
+
+// Modified generateDesignCode to store in savedDesignCodes
+function generateDesignCode() {
+  if (!currentSVGEl || !svgSelect.value) return '';
+
+  const svgIndex = Array.from(svgSelect.options).findIndex(opt => opt.value === svgSelect.value);
+  if (svgIndex < 0) return '';
+
+  const keys = currentSVGEl.__fillKeys || [];
+  let code = String(svgIndex);
+
+  keys.forEach((origColor, idx) => {
+    const row = colorPickersDiv.children[idx];
+    let letter = 'd'; // default no-fill
+    let newColor = 'none';
+
+    if (row) {
+      const selected = Array.from(row.children).find(btn => btn.textContent.includes('✖'));
+      if (selected) {
+        letter = (selected.dataset.colorValue === 'none') ? 'd' : closestColor(selected.dataset.colorValue);
+      } else {
+        const orig = normalizeColor(origColor);
+        letter = (orig === null) ? 'd' : closestColor(orig);
+      }
+
+      newColor = canonicalColors[letter] || 'none';
+
+      // update the buttons
+      Array.from(row.children).forEach(btn => btn.textContent = '   ');
+      const btnToCheck = Array.from(row.children).find(b => b.dataset.colorValue === newColor);
+      if (btnToCheck) btnToCheck.textContent = ' ✖';
+    }
+
+    // apply the color to the SVG
+    applyColorChangeForKey(idx, newColor);
+  });
+
+  code += keys.map((_, idx) => {
+    const row = colorPickersDiv.children[idx];
+    const selected = row ? Array.from(row.children).find(btn => btn.textContent.includes('✖')) : null;
+    if (!selected) return 'd';
+    return selected.dataset.colorValue === 'none' ? 'd' : closestColor(selected.dataset.colorValue);
+  }).join('');
+
+  // store in mapping
+  savedDesignCodes[svgIndex] = code;
+
+  return code;
+}
+
+
+function colorDistance(hex1, hex2) {
+  function hexToRgb(h) {
+    h = h.replace(/^#/,'');
+    if(h.length===3) h = h.split('').map(c=>c+c).join('');
+    const bigint = parseInt(h,16);
+    return [(bigint>>16)&255,(bigint>>8)&255, bigint&255];
+  }
+  const [r1,g1,b1] = hexToRgb(hex1);
+  const [r2,g2,b2] = hexToRgb(hex2);
+  return Math.sqrt((r1-r2)**2 + (g1-g2)**2 + (b1-b2)**2);
+}
+
+const canonicalColors = {
+  a:'#000000', // black
+  b:'#ffffff', // white
+  c:'#d40000', // red
+  d:'none'     // no fill
+};
+
+// returns 'a','b','c', or 'd'
+function closestColor(hex) {
+  if (!hex || hex==='none') return 'd';
+  let best = 'd', bestDist = Infinity;
+  for (const [key, val] of Object.entries(canonicalColors)) {
+    if(val==='none') continue;
+    const dist = colorDistance(hex, val);
+    if(dist < bestDist) { bestDist = dist; best = key; }
+  }
+  return best;
+}
+
+function applyDesignCode(code) {
+  if (!code) return;
+
+  // determine svgIdx and where to slice the code
+  let svgIdx;
+  let slicePos = 1;
+
+  if (!isNaN(code[0]) && !isNaN(code[1])) {
+    // two-digit number
+    svgIdx = parseInt(code[0] + code[1]);
+    slicePos = 2;
+  } else {
+    // single digit
+    svgIdx = parseInt(code[0]);
+  }
+
+  if (!isNaN(svgIdx) && svgSelect.selectedIndex !== svgIdx) {
+    svgSelect.selectedIndex = svgIdx;
+    const url = svgSelect.value;
+    if (url) {
+      loadSVG(url).then(() => applyDesignCode(code));
+    }
+    return;
+  }
+
+  const letters = code.slice(slicePos).split('');
+  const keys = currentSVGEl.__fillKeys || [];
+
+  keys.forEach((origColor, idx) => {
+    const letter = letters[idx] || 'd'; // ignore extra letters
+    const newColor = canonicalColors[letter] || 'none';
+
+    const row = colorPickersDiv.children[idx];
+    if (row) {
+      Array.from(row.children).forEach(btn => btn.textContent = '   '); // clear all
+      if (newColor !== 'none') {
+        const btnToCheck = Array.from(row.children).find(b => b.dataset.colorValue === newColor);
+        if (btnToCheck) btnToCheck.textContent = ' ✖';
+      } else {
+        // select the no-fill button
+        const btnToCheck = Array.from(row.children).find(b => b.dataset.colorValue === 'none');
+        if (btnToCheck) btnToCheck.textContent = ' ✖';
+      }
+    }
+
+    // apply color to SVG
+    applyColorChangeForKey(idx, newColor);
+  });
+}
+
+designCodeInput.addEventListener('input', ()=>{}); // keep editable
+// Also update mapping when manually applying a code
+applyCodeBtn.addEventListener('click', ()=>{
+  applyDesignCode(designCodeInput.value);
+
+  const svgIndex = Array.from(svgSelect.options).findIndex(opt => opt.value === svgSelect.value);
+  if(svgIndex >= 0) savedDesignCodes[svgIndex] = designCodeInput.value;
+});
+copyCodeBtn.addEventListener('click', ()=>{
+  designCodeInput.select();
+  document.execCommand('copy');
+});
+
+
+/* -------------------------------------------------------------- */
+</script>
+
+</body>
+</html>
